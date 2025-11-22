@@ -11,7 +11,7 @@ function App() {
         Welcome to the App
       </h1>
       <SignedOut>
-              <SignInButton mode='modal'/>
+              <SignInButton mode="modal"/>
       </SignedOut>
 
       <SignedIn>

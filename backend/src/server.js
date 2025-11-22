@@ -3,11 +3,21 @@ import {ENV} from "./lib/env.js";
 import path from "path";
 import { fileURLToPath } from 'url';
 import { connectDB } from './lib/db.js';
+import cors from "cors";
+import {serve} from "inngest/express"
+import {inngest, functions} from "./lib/inngest.js"
 
 const app = express();
 
 
 app.use(express.json());
+app.use(cors({
+   origin:ENV.CLIENT_URL,
+   credentials:true
+}
+));
+
+app.use("/api/inngest", serve({client : inngest, functions}))
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,17 +26,9 @@ app.get('/', (req, res) => {
    res.status(200).json({ msg: 'successs from backend hello' });
 });
 
-
-const PORT = ENV.PORT || 5000;
-
-app.listen(PORT, () => {
-   console.log(`server is listening on port ${PORT}...`);
-});
-
-
 // how can we distinguish between we are in production or in development
 // making our application ready for deployment
-const MODE = ENV.MODE_ENV || process.env.NODE_ENV || 'development';
+const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
 if (MODE === 'production') {
    // path from backend/src -> ../../frontend/vite-project/dist
    const staticPath = path.join(__dirname, '../../frontend/vite-project/dist');
@@ -37,19 +39,18 @@ if (MODE === 'production') {
    });
 }
 
-
-// export default app;
-
-
-
-const startServer = async () =>{
-   try{
+const startServer = async () => {
+   try {
       await connectDB();
-      app.listen(ENV.PORT,()=> {
-      console.log( "Server is running on port:", ENV.PORT)});
+      const PORT = ENV.PORT || 5000;
+      app.listen(PORT, () => {
+         console.log(`Server is running on port: ${PORT}`);
+      });
    }  
-   catch(error){
-      console.error("Error starting the server",err);
+   catch(error) {
+      console.error("Error starting the server", error);
+      process.exit(1);
    }
 }
+
 startServer();
