@@ -55,10 +55,17 @@ Add these environment variables in your Render dashboard. Click "+ Add Environme
 ### 9. CLERK_PUBLISHABLE_KEY
 - **Name**: `CLERK_PUBLISHABLE_KEY`
 - **Value**: Your Clerk publishable key (starts with `pk_`)
-- **Description**: Public key for Clerk authentication (used in frontend)
+- **Description**: Public key for Clerk authentication (used in backend)
 - **Where to get it**: Clerk Dashboard → API Keys → Publishable Key
 
-### 10. CLERK_SECRET_KEY
+### 10. VITE_CLERK_PUBLISHABLE_KEY ⚠️ IMPORTANT
+- **Name**: `VITE_CLERK_PUBLISHABLE_KEY`
+- **Value**: Your Clerk publishable key (same as CLERK_PUBLISHABLE_KEY, starts with `pk_`)
+- **Description**: **Required for frontend build** - Vite needs this prefixed with `VITE_` to make it available in the frontend code
+- **Where to get it**: Same as CLERK_PUBLISHABLE_KEY - use the same value
+- **Note**: This MUST be set for the frontend to work!
+
+### 11. CLERK_SECRET_KEY
 - **Name**: `CLERK_SECRET_KEY`
 - **Value**: Your Clerk secret key (starts with `sk_`)
 - **Description**: Secret key for Clerk authentication (used in backend)
@@ -77,6 +84,7 @@ Copy and paste this list to track what you've added:
 - [ ] STREAM_API_KEY = `your_stream_api_key`
 - [ ] STREAM_API_SECRET = `your_stream_api_secret`
 - [ ] CLERK_PUBLISHABLE_KEY = `pk_...`
+- [ ] VITE_CLERK_PUBLISHABLE_KEY = `pk_...` (same value as above - REQUIRED for frontend!)
 - [ ] CLERK_SECRET_KEY = `sk_...`
 
 ## Important Notes
