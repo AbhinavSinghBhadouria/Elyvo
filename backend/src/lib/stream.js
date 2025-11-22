@@ -4,17 +4,30 @@ import {ENV} from "./env.js"
 const apiKey = ENV.STREAM_API_KEY
 const apiSecret = ENV.STREAM_API_SECRET
 
-if(!apiKey || !apiSecret){
-    console.error("Stream Credentials are missing");
-    throw new Error("Stream API credentials are required. Please set STREAM_API_KEY and STREAM_API_SECRET environment variables.");
+// Create server-side client for admin operations (only if credentials are available)
+let chatClient = null;
+
+if(apiKey && apiSecret){
+    try {
+        chatClient = new StreamChat(apiKey, apiSecret);
+        console.log("Stream Chat client initialized successfully");
+    } catch(error) {
+        console.error("Error initializing Stream Chat client:", error);
+    }
+} else {
+    console.warn("Stream API credentials are missing. Stream features will be disabled.");
+    console.warn("Please set STREAM_API_KEY and STREAM_API_SECRET environment variables to enable Stream features.");
 }
 
-// Create server-side client for admin operations
-export const chatClient = new StreamChat(apiKey, apiSecret);
+export { chatClient };
 
 // upsert ka mtlb hi hota h create and update the data
 export const upsertStreamUser = async(userData)=>{
     try{
+        if (!chatClient) {
+            console.warn("Stream client not initialized. Skipping user creation.");
+            return;
+        }
         if (!userData.id) {
             throw new Error("User ID is required for Stream user creation");
         }
@@ -29,6 +42,10 @@ export const upsertStreamUser = async(userData)=>{
 
 export const deleteStreamUser = async(userId)=>{
     try{
+        if (!chatClient) {
+            console.warn("Stream client not initialized. Skipping user deletion.");
+            return;
+        }
         if (!userId) {
             throw new Error("User ID is required for Stream user deletion");
         }
