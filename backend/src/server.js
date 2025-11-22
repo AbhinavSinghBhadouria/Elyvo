@@ -22,6 +22,7 @@ app.use(cors({
 
 app.use("/api/inngest", serve({client : inngest, functions}))
 app.use(clerkMiddleware()); // this adds the field to request object: req.auth()
+app.use("/api/chat", chatRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.resolve(__filename);
