@@ -22,20 +22,29 @@ app.use("/api/inngest", serve({client : inngest, functions}))
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.get('/', (req, res) => {
-   res.status(200).json({ msg: 'successs from backend hello' });
-});
-
 // how can we distinguish between we are in production or in development
 // making our application ready for deployment
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
+
 if (MODE === 'production') {
    // path from backend/src -> ../../frontend/vite-project/dist
    const staticPath = path.join(__dirname, '../../frontend/vite-project/dist');
    app.use(express.static(staticPath));
 
-   app.get('*', (req, res) => {
+   // Catch-all handler for SPA routing (Express 5 compatible)
+   // This middleware runs after static files and catches all non-API routes
+   app.use((req, res, next) => {
+      // Don't handle API routes
+      if (req.path.startsWith('/api')) {
+         return next();
+      }
+      // Serve index.html for SPA client-side routing
       res.sendFile(path.join(staticPath, 'index.html'));
+   });
+} else {
+   // Development mode - return JSON response for root route
+   app.get('/', (req, res) => {
+      res.status(200).json({ msg: 'successs from backend hello' });
    });
 }
 
