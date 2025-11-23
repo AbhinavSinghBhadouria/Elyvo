@@ -32,6 +32,8 @@ const syncUser = inngest.createFunction(
             name: newUser.name,
             image: newUser.profileImage,
         });
+
+        // todo : send the mail about successful message
     }
 )
 
