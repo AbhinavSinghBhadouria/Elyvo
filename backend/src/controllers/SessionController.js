@@ -103,9 +103,17 @@ export async function joinSession(req,res){
         
         const session = await Session.findById(id);
         if(!session) return res.status(404).json({msg:"Session not found"});
+
+        if(session.status != "active"){
+            return res.status(400).json({msg:"Cannot join a completed session"})
+        }
         
+
+        if(session.host.toString()=== userId.toString()){
+            return res.status(400).json({msg:"Host cannot join their own meeting as Participants"});
+        }
         // we wil check is the session is already filled - has a participant 
-        if(session.participant) return res.status(404).json({msg:"Session is full"})
+        if(session.participant) return res.status(409).json({msg:"Session is full"})
 
         session.participant = userId
         await session.save()
@@ -141,11 +149,14 @@ export async function endSession(req,res){
                 return res.status(400).json({msg:"Session is already completed"});
             }
 
-            session.status = "completed"
-            await session.save()
+            const call = streamClient.video.call("dafault",session.callId);
+            await call.delete({hard:true});
 
             const channel =chatClient.channel("messaging", session.callId);
             await channel.delete();
+
+            session.status = "completed"
+            await session.save()
 
 
             res.status(200).json({session, msg:"Session ended successfully"});
