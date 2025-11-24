@@ -1,25 +1,26 @@
 import { useState } from 'react'
 import './App.css'
 import {SignedIn, SignInButton, SignOutButton, SignedOut, UserButton} from "@clerk/clerk-react";
+import {Routes} from "react-router";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const {isSignedIn} = useUser()
 
   return (
     <>
-      <h1>
-        Welcome to the App
-      </h1>
-      <SignedOut>
-              <SignInButton mode="modal"/>
-      </SignedOut>
+    <Routes>
+      <Route path = "/"  element={<HomePage/>} />
+      <Route path = "/problems"  element={isSignedIn? <ProblemsPage/>: <Navigate to= {"/"}/>} />
+      <Route path = "/"  element={<HomePage/>} />
 
-      <SignedIn>
-        <SignOutButton/>
-      </SignedIn>
-      <UserButton/>
+    </Routes>
+
+      
+    <Toaster toastOptions = {{duration : 3000}}/>
     </>
   )
 }
 
 export default App
+// we have done tailwind css , daisyui,  react-router- react-hot-toast,
+// now we will do tasks such as react-query aka tanstack query, axios
