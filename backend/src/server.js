@@ -36,45 +36,38 @@ const __dirname = path.dirname(__filename);
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
 
 if (MODE === 'production') {
-   // Try multiple likely locations for the built frontend `dist` folder
-   const candidates = [
-      path.join(__dirname, '../../frontend/vite-project/dist'),
-      path.join(__dirname, '../frontend/vite-project/dist'),
-      path.join(__dirname, '../../frontend/dist'),
-      path.join(process.cwd(), 'frontend/vite-project/dist'),
-      path.join(process.cwd(), 'frontend/dist'),
-      path.join(process.cwd(), 'dist')
-   ];
+   // First, allow explicit override via env var (recommended in deployments)
+   let staticPath = process.env.FRONTEND_DIST ? path.resolve(process.env.FRONTEND_DIST) : null;
 
-   let staticPath = candidates.find(p => {
-      try {
-         return fs.existsSync(p) && fs.statSync(p).isDirectory();
-      } catch (e) {
-         return false;
-      }
-   });
-
+   // If env var not provided or invalid, detect common repo-relative paths
    if (!staticPath) {
-      console.warn('⚠️  Frontend `dist` folder not found. Static assets will not be served. Checked:', candidates.join(', '));
-   } else {
-      console.log('✅ Serving static frontend from', staticPath);
-      app.use(express.static(staticPath));
+     const repoRoot = path.resolve(__dirname, '../../');
+     const candidates = [
+       path.join(repoRoot, 'frontend/vite-project/dist'),
+       path.join(repoRoot, 'frontend/dist'),
+       path.join(repoRoot, 'dist'),
+       path.join(__dirname, '../../frontend/vite-project/dist'),
+       path.join(process.cwd(), '../frontend/vite-project/dist'),
+       path.join(process.cwd(), 'frontend/vite-project/dist')
+     ];
 
+     staticPath = candidates.find(p => {
+       try { return fs.existsSync(p) && fs.statSync(p).isDirectory(); }
+       catch (e) { return false; }
+     });
+   }
+
+   if (staticPath) {
+      app.use(express.static(staticPath));
       // Catch-all handler for SPA routing (Express 5 compatible)
-      // This middleware runs after static files and catches all non-API routes
       app.use((req, res, next) => {
          // Don't handle API routes
-         if (req.path.startsWith('/api')) {
-            return next();
-         }
+         if (req.path.startsWith('/api')) return next();
          // Serve index.html for SPA client-side routing
-         res.sendFile(path.join(staticPath, 'index.html'), err => {
-            if (err) {
-               console.error('Failed to send index.html:', err);
-               next(err);
-            }
-         });
+         res.sendFile(path.join(staticPath, 'index.html'));
       });
+   } else {
+      console.warn('⚠️  Frontend `dist` folder not found. Static assets will not be served.');
    }
 } else {
    // Development mode - return JSON response for root route
