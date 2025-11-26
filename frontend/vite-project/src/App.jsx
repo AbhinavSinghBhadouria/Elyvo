@@ -1,26 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
-import {SignedIn, SignInButton, SignOutButton, SignedOut, UserButton} from "@clerk/clerk-react";
-import {Routes} from "react-router";
+import { useUser } from '@clerk/clerk-react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import ProblemsPage from './pages/ProblemsPage'
+import WelcomePage from './pages/WelcomePage'
+import DashBoardPage from './pages/DashBoardPage'
+import { Toaster } from 'react-hot-toast'
 
 function App() {
-  const {isSignedIn} = useUser()
+  const { isSignedIn, isLoaded } = useUser()
+  const [showSplash, setShowSplash] = useState(true)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Splash Screen
+  if (showSplash) {
+    return <WelcomePage />
+  }
+
+  // Wait for Clerk
+  if (!isLoaded) return null
 
   return (
     <>
-    <Routes>
-      <Route path = "/"  element={<HomePage/>} />
-      <Route path = "/problems"  element={isSignedIn? <ProblemsPage/>: <Navigate to= {"/"}/>} />
-      <Route path = "/"  element={<HomePage/>} />
+      <Routes>
 
-    </Routes>
+        {/* Public Home */}
+        <Route 
+          path="/" 
+          element={isSignedIn ? <Navigate to="/dashboard" /> : <HomePage />} 
+        />
 
-      
-    <Toaster toastOptions = {{duration : 3000}}/>
+        {/* Protected Dashboard */}
+        <Route 
+          path="/dashboard" 
+          element={isSignedIn ? <DashBoardPage /> : <Navigate to="/" />} 
+        />
+
+        {/* Protected Problems */}
+        <Route 
+          path="/problems" 
+          element={isSignedIn ? <ProblemsPage /> : <Navigate to="/" />} 
+        />
+
+      </Routes>
+
+      <Toaster toastOptions={{ duration: 3000 }} />
     </>
   )
 }
 
 export default App
-// we have done tailwind css , daisyui,  react-router- react-hot-toast,
-// now we will do tasks such as react-query aka tanstack query, axios
