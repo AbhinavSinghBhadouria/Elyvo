@@ -1,6 +1,7 @@
 import express from 'express';
 import {ENV} from "./lib/env.js";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from 'url';
 import { connectDB } from './lib/db.js';
 import cors from "cors";
@@ -28,27 +29,53 @@ app.use("/api/sessions", sessionRoutes);
 
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.resolve(__filename);
+const __dirname = path.dirname(__filename);
 
 // how can we distinguish between we are in production or in development
 // making our application ready for deployment
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
 
 if (MODE === 'production') {
-   // path from backend/src -> ../../frontend/vite-project/dist
-   const staticPath = path.join(__dirname, '../../frontend/vite-project/dist');
-   app.use(express.static(staticPath));
+   // Try multiple likely locations for the built frontend `dist` folder
+   const candidates = [
+      path.join(__dirname, '../../frontend/vite-project/dist'),
+      path.join(__dirname, '../frontend/vite-project/dist'),
+      path.join(__dirname, '../../frontend/dist'),
+      path.join(process.cwd(), 'frontend/vite-project/dist'),
+      path.join(process.cwd(), 'frontend/dist'),
+      path.join(process.cwd(), 'dist')
+   ];
 
-   // Catch-all handler for SPA routing (Express 5 compatible)
-   // This middleware runs after static files and catches all non-API routes
-   app.use((req, res, next) => {
-      // Don't handle API routes
-      if (req.path.startsWith('/api')) {
-         return next();
+   let staticPath = candidates.find(p => {
+      try {
+         return fs.existsSync(p) && fs.statSync(p).isDirectory();
+      } catch (e) {
+         return false;
       }
-      // Serve index.html for SPA client-side routing
-      res.sendFile(path.join(staticPath, 'index.html'));
    });
+
+   if (!staticPath) {
+      console.warn('⚠️  Frontend `dist` folder not found. Static assets will not be served. Checked:', candidates.join(', '));
+   } else {
+      console.log('✅ Serving static frontend from', staticPath);
+      app.use(express.static(staticPath));
+
+      // Catch-all handler for SPA routing (Express 5 compatible)
+      // This middleware runs after static files and catches all non-API routes
+      app.use((req, res, next) => {
+         // Don't handle API routes
+         if (req.path.startsWith('/api')) {
+            return next();
+         }
+         // Serve index.html for SPA client-side routing
+         res.sendFile(path.join(staticPath, 'index.html'), err => {
+            if (err) {
+               console.error('Failed to send index.html:', err);
+               next(err);
+            }
+         });
+      });
+   }
 } else {
    // Development mode - return JSON response for root route
    app.get('/', (req, res) => {
