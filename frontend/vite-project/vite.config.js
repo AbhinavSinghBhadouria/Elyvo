@@ -5,4 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['@stream-io/video-react-sdk', 'stream-chat', 'stream-chat-react', 'date-fns', '@monaco-editor/react']
+  }
 })
