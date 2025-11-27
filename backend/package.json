@@ -6,8 +6,8 @@
   "scripts": {
   "test": "echo \"Error: no test specified\" && exit 1",
   "dev": "nodemon src/server.js",
-  "build": "cd ../frontend/vite-project && NPM_CONFIG_PRODUCTION=false npm ci && npm run build && mkdir -p ../backend/public && cp -R dist/* ../backend/public/ || true",
-  "start": "npm run build && node src/server.js",
+  "build": "cd ../frontend/vite-project && NPM_CONFIG_PRODUCTION=false npm ci && npm run build && mkdir -p ../../backend/public && cp -R dist/* ../../backend/public/ || true",
+  "start": "node src/server.js",
   "postinstall": "cd ../frontend/vite-project && NPM_CONFIG_PRODUCTION=false npm ci"
 },
   "keywords": [],

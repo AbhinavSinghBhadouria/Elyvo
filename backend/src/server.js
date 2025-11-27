@@ -36,6 +36,10 @@ const __dirname = path.dirname(__filename);
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
 
 if (MODE === 'production') {
+   console.log('🔍 Looking for frontend static files...');
+   console.log('Current working directory:', process.cwd());
+   console.log('__dirname:', __dirname);
+   
    // First, allow explicit override via env var (recommended in deployments)
    let staticPath = process.env.FRONTEND_DIST ? path.resolve(process.env.FRONTEND_DIST) : null;
 
@@ -44,31 +48,38 @@ if (MODE === 'production') {
      // On Render, the working directory when server starts is usually the backend folder
      // Try multiple possible paths - check backend/public first (where build script copies files)
      const candidates = [
-       // First check backend/public (where build script copies dist files)
+       // First check backend/public (where build script copies dist files) - MOST LIKELY
        path.join(__dirname, '../public'),
        path.join(process.cwd(), 'public'),
+       path.resolve(process.cwd(), 'public'),
        // Then check original frontend dist location
        path.join(__dirname, '../../frontend/vite-project/dist'),
        path.join(process.cwd(), '../frontend/vite-project/dist'),
-       // Absolute path from project root (Render structure)
        path.resolve(process.cwd(), '../frontend/vite-project/dist'),
        // Other possible locations
        path.join(__dirname, '../../dist'),
        path.join(process.cwd(), '../dist'),
      ];
 
+     console.log('Checking candidate paths:');
      staticPath = candidates.find(p => {
        try { 
          const exists = fs.existsSync(p);
          if (exists) {
            const isDir = fs.statSync(p).isDirectory();
-           const hasIndex = fs.existsSync(path.join(p, 'index.html'));
-           console.log(`Checking path: ${p}, exists: ${exists}, isDir: ${isDir}, hasIndex: ${hasIndex}`);
-           return isDir && hasIndex;
+           const indexPath = path.join(p, 'index.html');
+           const hasIndex = fs.existsSync(indexPath);
+           console.log(`  ✓ ${p} - exists: ${exists}, isDir: ${isDir}, hasIndex: ${hasIndex}`);
+           if (isDir && hasIndex) {
+             return true;
+           }
+         } else {
+           console.log(`  ✗ ${p} - does not exist`);
          }
          return false;
        }
        catch (e) { 
+         console.log(`  ✗ ${p} - error: ${e.message}`);
          return false; 
        }
      });

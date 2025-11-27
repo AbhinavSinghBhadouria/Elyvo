@@ -2,7 +2,7 @@ services:
   - type: web
     name: elyvo-app
     env: node
-    buildCommand: cd backend && npm install && cd ../frontend/vite-project && npm install && npm run build && mkdir -p ../../backend/public && cp -r dist/* ../../backend/public/ && cd ../../backend
+    buildCommand: cd backend && npm install && cd ../frontend/vite-project && npm install && npm run build && cd ../../backend && mkdir -p public && cp -r ../frontend/vite-project/dist/* public/ && echo "Build complete - files copied to backend/public"
     startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
