@@ -4,12 +4,12 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-  "test": "echo \"Error: no test specified\" && exit 1",
-  "dev": "nodemon src/server.js",
-  "build": "cd ../frontend/vite-project && NPM_CONFIG_PRODUCTION=false npm ci && npm run build",
-  "start": "node src/server.js",
-  "postinstall": "cd ../frontend/vite-project && NPM_CONFIG_PRODUCTION=false npm ci"
-},
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/server.js",
+    "build": "cd ../frontend/vite-project && NPM_CONFIG_PRODUCTION=false npm ci && npm run build",
+    "start": "node src/server.js",
+    "postinstall": "cd ../frontend/vite-project && NPM_CONFIG_PRODUCTION=false npm ci"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,6 +17,7 @@
   "dependencies": {
     "@clerk/express": "^1.7.41",
     "@stream-io/node-sdk": "^0.7.12",
+    "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
