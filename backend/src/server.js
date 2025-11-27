@@ -29,7 +29,7 @@ app.use("/api/sessions", sessionRoutes);
 
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.resolve(__filename);
+const __dirname = path.dirname(__filename);
 
 // how can we distinguish between we are in production or in development
 // making our application ready for deployment
