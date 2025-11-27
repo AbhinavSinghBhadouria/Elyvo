@@ -35,20 +35,17 @@ const __dirname = path.resolve(__filename);
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
 
 if (MODE === 'production') {
-   // path from backend/src -> ../../frontend/vite-project/dist
-   const staticPath = path.join(__dirname, '../../frontend/vite-project/dist');
-   app.use(express.static(staticPath));
-
-   // Catch-all handler for SPA routing (Express 5 compatible)
-   // This middleware runs after static files and catches all non-API routes
-   app.use((req, res, next) => {
-      // Don't handle API routes
-      if (req.path.startsWith('/api')) {
-         return next();
-      }
-      // Serve index.html for SPA client-side routing
-      res.sendFile(path.join(staticPath, 'index.html'));
-   });
+   // Simple path resolution - check backend/public (where build copies files)
+   const staticPath = path.join(__dirname, '../public');
+   
+   if (fs.existsSync(staticPath) && fs.existsSync(path.join(staticPath, 'index.html'))) {
+      app.use(express.static(staticPath));
+      // Catch-all handler for SPA routing
+      app.use((req, res, next) => {
+         if (req.path.startsWith('/api')) return next();
+         res.sendFile(path.join(staticPath, 'index.html'));
+      });
+   }
 } else {
    // Development mode - return JSON response for root route
    app.get('/', (req, res) => {
