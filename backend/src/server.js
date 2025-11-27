@@ -36,76 +36,17 @@ const __dirname = path.dirname(__filename);
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
 
 if (MODE === 'production') {
-   console.log('🔍 Looking for frontend static files...');
-   console.log('Current working directory:', process.cwd());
-   console.log('__dirname:', __dirname);
+   // Simple path resolution - check backend/public first (where build copies files)
+   const staticPath = path.join(__dirname, '../public');
    
-   // First, allow explicit override via env var (recommended in deployments)
-   let staticPath = process.env.FRONTEND_DIST ? path.resolve(process.env.FRONTEND_DIST) : null;
+   if (fs.existsSync(staticPath) && fs.existsSync(path.join(staticPath, 'index.html'))) {
 
-   // If env var not provided or invalid, detect common repo-relative paths
-   if (!staticPath) {
-     // On Render, the working directory when server starts is usually the backend folder
-     // Try multiple possible paths - check backend/public first (where build script copies files)
-     const candidates = [
-       // First check backend/public (where build script copies dist files) - MOST LIKELY
-       path.join(__dirname, '../public'),
-       path.join(process.cwd(), 'public'),
-       path.resolve(process.cwd(), 'public'),
-       // Then check original frontend dist location
-       path.join(__dirname, '../../frontend/vite-project/dist'),
-       path.join(process.cwd(), '../frontend/vite-project/dist'),
-       path.resolve(process.cwd(), '../frontend/vite-project/dist'),
-       // Other possible locations
-       path.join(__dirname, '../../dist'),
-       path.join(process.cwd(), '../dist'),
-     ];
-
-     console.log('Checking candidate paths:');
-     staticPath = candidates.find(p => {
-       try { 
-         const exists = fs.existsSync(p);
-         if (exists) {
-           const isDir = fs.statSync(p).isDirectory();
-           const indexPath = path.join(p, 'index.html');
-           const hasIndex = fs.existsSync(indexPath);
-           console.log(`  ✓ ${p} - exists: ${exists}, isDir: ${isDir}, hasIndex: ${hasIndex}`);
-           if (isDir && hasIndex) {
-             return true;
-           }
-         } else {
-           console.log(`  ✗ ${p} - does not exist`);
-         }
-         return false;
-       }
-       catch (e) { 
-         console.log(`  ✗ ${p} - error: ${e.message}`);
-         return false; 
-       }
-     });
-   }
-
-   if (staticPath && fs.existsSync(staticPath)) {
-      console.log(`✅ Serving static files from: ${staticPath}`);
       app.use(express.static(staticPath));
-      // Catch-all handler for SPA routing (Express 5 compatible)
+      // Catch-all handler for SPA routing
       app.use((req, res, next) => {
-         // Don't handle API routes
          if (req.path.startsWith('/api')) return next();
-         // Serve index.html for SPA client-side routing
-         const indexPath = path.join(staticPath, 'index.html');
-         if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-         } else {
-            console.error(`❌ index.html not found at: ${indexPath}`);
-            res.status(404).json({ error: 'Frontend not found' });
-         }
+         res.sendFile(path.join(staticPath, 'index.html'));
       });
-   } else {
-      console.error('⚠️  Frontend `dist` folder not found. Static assets will not be served.');
-      console.error('Current working directory:', process.cwd());
-      console.error('__dirname:', __dirname);
-      console.error('Tried paths:', candidates);
    }
 } else {
    // Development mode - return JSON response for root route
