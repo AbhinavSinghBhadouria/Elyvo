@@ -1,6 +1,7 @@
 import express from 'express';
 import {ENV} from "./lib/env.js";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from 'url';
 import { connectDB } from './lib/db.js';
 import cors from "cors";
