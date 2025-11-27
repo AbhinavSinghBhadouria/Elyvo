@@ -42,13 +42,15 @@ if (MODE === 'production') {
    // If env var not provided or invalid, detect common repo-relative paths
    if (!staticPath) {
      const repoRoot = path.resolve(__dirname, '../../');
-     const candidates = [
+    const candidates = [
        path.join(repoRoot, 'frontend/vite-project/dist'),
        path.join(repoRoot, 'frontend/dist'),
        path.join(repoRoot, 'dist'),
+       // backend/public is a common place to copy dist into for single-service deploys
+       path.join(repoRoot, 'backend/public'),
        path.join(__dirname, '../../frontend/vite-project/dist'),
        path.join(process.cwd(), '../frontend/vite-project/dist'),
-       path.join(process.cwd(), 'frontend/vite-project/dist')
+         path.join(process.cwd(), 'frontend/vite-project/dist')
      ];
 
      staticPath = candidates.find(p => {
