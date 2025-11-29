@@ -186,7 +186,9 @@ function ProblemsPage() {
                       </div>
                     </div>
                     <p className="text-white/70 text-sm leading-relaxed mb-4">
-                      {problem.description?.text?.slice(0, 180) || "Interview prompt"}
+                      {typeof problem.description === 'string' 
+                        ? problem.description.slice(0, 180) + (problem.description.length > 180 ? '...' : '')
+                        : problem.description?.text?.slice(0, 180) || "Interview prompt"}
                     </p>
                     <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.4em] text-white/50">
                       <span className={`badge ${getDifficultyBadgeClass(problem.difficulty)}`}>
