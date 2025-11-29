@@ -106,14 +106,16 @@ function ProblemDetailPage() {
         </div>
 
         {/* Description */}
-        <div className="glass-panel rounded-3xl p-8 border border-white/10">
-          <h2 className="text-xl font-bold mb-4 text-white/90">Description</h2>
-          <div className="prose prose-invert max-w-none">
-            <p className="text-white/75 leading-relaxed whitespace-pre-wrap">
-              {problem.description || "No description available."}
-            </p>
+        {problem.description && (
+          <div className="glass-panel rounded-3xl p-8 border border-white/10">
+            <h2 className="text-xl font-bold mb-4 text-white/90">Description</h2>
+            <div className="prose prose-invert max-w-none">
+              <p className="text-white/75 leading-relaxed whitespace-pre-wrap">
+                {problem.description}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Examples */}
         {problem.examples && problem.examples.length > 0 && (
