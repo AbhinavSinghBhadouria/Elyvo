@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronRightIcon,
@@ -9,15 +9,42 @@ import {
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
-import { PROBLEMS } from "../data/problems";
+import { problemsApi } from "../api/problems";
 import { getDifficultyBadgeClass } from "../lib/utils";
 
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
 
 function ProblemsPage() {
-  const problems = Object.values(PROBLEMS);
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [difficulty, setDifficulty] = useState("All");
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const fetchProblems = async () => {
+      try {
+        setLoading(true);
+        const response = await problemsApi.getAllProblems();
+        
+        // Remove duplicates based on id - THIS FIXES THE KEY ERROR
+        const uniqueProblems = (response.problems || []).filter(
+          (problem, index, self) =>
+            index === self.findIndex(p => p.id === problem.id)
+        );
+        
+        setProblems(uniqueProblems);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load problems. Please try again.");
+        console.error("Error fetching problems:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProblems();
+  }, []);
 
   const difficultyStats = useMemo(
     () =>
@@ -121,7 +148,21 @@ function ProblemsPage() {
         {/* CONTENT */}
         <div className="grid grid-cols-1 lg:grid-cols-[1.7fr_0.3fr] gap-8">
           <div className="space-y-4">
-            {filteredProblems.length === 0 ? (
+            {loading ? (
+              <div className="glass-panel rounded-2xl p-10 text-center border border-white/10">
+                <p className="text-lg text-white/70">Loading problems...</p>
+              </div>
+            ) : error ? (
+              <div className="glass-panel rounded-2xl p-10 text-center border border-white/10">
+                <p className="text-lg text-red-400">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : filteredProblems.length === 0 ? (
               <div className="glass-panel rounded-2xl p-10 text-center border border-white/10">
                 <p className="text-lg text-white/70">
                   No problems found with the current filter. Try changing difficulty or search terms.
@@ -196,7 +237,7 @@ function ProblemsPage() {
                 <Wand2Icon className="size-4" /> tip
               </p>
               <p className="text-white/70 text-sm">
-                Tag solved problems as <span className="text-primary font-semibold">“teachable”</span>{" "}
+                Tag solved problems as <span className="text-primary font-semibold">"teachable"</span>{" "}
                 to surface them in mock interview playlists.
               </p>
             </div>
@@ -208,4 +249,3 @@ function ProblemsPage() {
 }
 
 export default ProblemsPage;
-
