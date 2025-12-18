@@ -1,10 +1,41 @@
 import { Link, useLocation } from "react-router-dom";
-import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon } from "lucide-react";
+import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon, TrophyIcon } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
+import { useState, useEffect } from "react";
 
 function Navbar() {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+  const [solvedCount, setSolvedCount] = useState(0);
+
+  useEffect(() => {
+    // Load solved count from localStorage
+    const updateSolvedCount = () => {
+      const saved = localStorage.getItem('solvedProblems');
+      if (saved) {
+        try {
+          const problems = JSON.parse(saved);
+          setSolvedCount(problems.length);
+        } catch (e) {
+          console.error('Error loading solved count:', e);
+        }
+      }
+    };
+
+    // Initial load
+    updateSolvedCount();
+
+    // Listen for storage changes (when problems are marked solved/unsolved)
+    window.addEventListener('storage', updateSolvedCount);
+    
+    // Custom event for same-tab updates
+    window.addEventListener('solvedProblemsUpdated', updateSolvedCount);
+
+    return () => {
+      window.removeEventListener('storage', updateSolvedCount);
+      window.removeEventListener('solvedProblemsUpdated', updateSolvedCount);
+    };
+  }, []);
 
   return (
     <nav className="sticky top-0 z-50 bg-gradient-to-r from-[#05070f]/95 via-[#060016]/85 to-[#05070f]/95 backdrop-blur-2xl border-b border-white/5 shadow-[0_15px_35px_rgba(5,2,23,0.65)]">
@@ -47,7 +78,7 @@ function Navbar() {
             </div>
           </Link>
 
-          {/* DASHBORD PAGE LINK */}
+          {/* DASHBOARD PAGE LINK */}
           <Link
             to={"/dashboard"}
             className={`px-4 py-2.5 rounded-lg transition-all duration-200 
@@ -64,6 +95,14 @@ function Navbar() {
               <span className="font-medium hidden sm:inline tracking-wide">Dashboard</span>
             </div>
           </Link>
+
+          {/* OPTIONAL: Solved Count Badge */}
+          {solvedCount > 0 && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 ml-2">
+              <TrophyIcon className="size-4 text-green-400" />
+              <span className="text-sm font-semibold text-green-400">{solvedCount}</span>
+            </div>
+          )}
 
           <div className="ml-4 mt-1">
             <UserButton />

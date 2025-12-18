@@ -18,6 +18,7 @@ function ProblemDetailPage() {
   const [problem, setProblem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [solvedProblems, setSolvedProblems] = useState(new Set());
 
   useEffect(() => {
     const fetchProblem = async () => {
@@ -38,7 +39,32 @@ function ProblemDetailPage() {
     if (id) {
       fetchProblem();
     }
+
+    // Load solved problems from localStorage
+    const saved = localStorage.getItem('solvedProblems');
+    if (saved) {
+      try {
+        setSolvedProblems(new Set(JSON.parse(saved)));
+      } catch (e) {
+        console.error('Error loading solved problems:', e);
+      }
+    }
   }, [id]);
+
+  const markAsSolved = () => {
+    if (!problem) return;
+    
+    const updated = new Set(solvedProblems);
+    if (updated.has(problem.id)) {
+      updated.delete(problem.id);
+    } else {
+      updated.add(problem.id);
+    }
+    setSolvedProblems(updated);
+    localStorage.setItem('solvedProblems', JSON.stringify([...updated]));
+  };
+
+  const isSolved = problem ? solvedProblems.has(problem.id) : false;
 
   if (loading) {
     return (
@@ -82,11 +108,26 @@ function ProblemDetailPage() {
           
           <div className="relative flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
             <div className="flex items-start gap-4 flex-1">
-              <div className="size-14 rounded-2xl bg-gradient-to-br from-primary/80 to-secondary/80 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/30">
-                <Code2Icon className="size-7 text-white" />
+              <div className={`size-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ${
+                isSolved 
+                  ? 'bg-gradient-to-br from-green-500/80 to-emerald-500/80 shadow-green-500/30'
+                  : 'bg-gradient-to-br from-primary/80 to-secondary/80 shadow-primary/30'
+              }`}>
+                {isSolved ? (
+                  <CheckCircle2Icon className="size-7 text-white" />
+                ) : (
+                  <Code2Icon className="size-7 text-white" />
+                )}
               </div>
               <div>
-                <h1 className="text-3xl md:text-4xl font-black mb-2">{problem.title}</h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl md:text-4xl font-black">{problem.title}</h1>
+                  {isSolved && (
+                    <span className="text-xs px-3 py-1 rounded-full bg-green-500/20 text-green-400 font-semibold border border-green-500/30">
+                      ✓ SOLVED
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="text-white/60">{problem.category}</span>
                   <span className="text-white/40">•</span>
@@ -97,13 +138,26 @@ function ProblemDetailPage() {
               </div>
             </div>
             
-            <Link 
-              to="/dashboard" 
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-xl hover:shadow-primary/30 transition-all whitespace-nowrap"
-            >
-              <PlayIcon className="size-4 fill-current" />
-              Start Solving
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={markAsSolved}
+                className={`px-6 py-3 rounded-2xl font-bold transition-all border ${
+                  isSolved
+                    ? 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30'
+                    : 'bg-white/5 text-white border-white/10 hover:border-primary/50 hover:bg-white/10'
+                }`}
+              >
+                {isSolved ? '✓ Mark Unsolved' : 'Mark as Solved'}
+              </button>
+              
+              <Link 
+                to="/dashboard" 
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-xl hover:shadow-primary/30 transition-all whitespace-nowrap"
+              >
+                <PlayIcon className="size-4 fill-current" />
+                Start Solving
+              </Link>
+            </div>
           </div>
         </div>
 
