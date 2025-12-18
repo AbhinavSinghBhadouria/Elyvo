@@ -9,6 +9,6 @@ export default defineConfig({
     include: ['@stream-io/video-react-sdk', 'stream-chat', 'stream-chat-react', 'date-fns', '@monaco-editor/react']
   },
   build: {
-    chunkSizeWarningLimit: 1600, // it is just to suppress warnings, adjust as needed
+    chunkSizeWarningLimit: 1600, // it is just to suppress warnings, adjust as wanted
   }
 })
