@@ -1,3 +1,6 @@
+
+
+
 import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -42,8 +45,15 @@ function SessionPage() {
     ? Object.values(PROBLEMS).find((p) => p.title === session.problem)
     : null;
 
+
+
+
+
+
+
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
+  const [code, setCode] = useState("");
+
 
   // auto-join session if user is not already a participant and not the host
   useEffect(() => {
@@ -51,9 +61,8 @@ function SessionPage() {
     if (isHost || isParticipant) return;
 
     joinSessionMutation.mutate(id, { onSuccess: refetch });
+  }, [session, user, loadingSession, isHost, isParticipant, id, joinSessionMutation, refetch]);
 
-    // remove the joinSessionMutation, refetch from dependencies to avoid infinite loop
-  }, [session, user, loadingSession, isHost, isParticipant, id]);
 
   // redirect the "participant" when session ends
   useEffect(() => {
@@ -62,20 +71,20 @@ function SessionPage() {
     if (session.status === "completed") navigate("/dashboard");
   }, [session, loadingSession, navigate]);
 
-  // update code when problem loads or changes
-  useEffect(() => {
-    if (problemData?.starterCode?.[selectedLanguage]) {
-      setCode(problemData.starterCode[selectedLanguage]);
-    }
-  }, [problemData, selectedLanguage]);
+
+
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setSelectedLanguage(newLang);
-    // use problem-specific starter code
-    const starterCode = problemData?.starterCode?.[newLang] || "";
-    setCode(starterCode);
+    // Initialize code with starter code when language changes
+    const newStarterCode = problemData?.starterCode?.[newLang] || "";
+    setCode(newStarterCode);
     setOutput(null);
+  };
+
+  const handleCodeChange = (value) => {
+    setCode(value);
   };
 
   const handleRunCode = async () => {
@@ -235,12 +244,13 @@ function SessionPage() {
               <Panel defaultSize={50} minSize={20}>
                 <PanelGroup direction="vertical">
                   <Panel defaultSize={70} minSize={30}>
+
                     <CodeEditorPanel
                       selectedLanguage={selectedLanguage}
                       code={code}
                       isRunning={isRunning}
                       onLanguageChange={handleLanguageChange}
-                      onCodeChange={(value) => setCode(value)}
+                      onCodeChange={handleCodeChange}
                       onRunCode={handleRunCode}
                     />
                   </Panel>
