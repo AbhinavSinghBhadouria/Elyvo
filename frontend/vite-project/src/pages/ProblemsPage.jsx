@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   ChevronRight,
   Code2,
@@ -8,76 +9,44 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-// Mock data for demonstration
-const MOCK_PROBLEMS = [
-  {
-    id: "1",
-    title: "Two Sum",
-    category: "Array",
-    difficulty: "Easy",
-    description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-    handlerFunction: "twoSum"
-  },
-  {
-    id: "2",
-    title: "Valid Parentheses",
-    category: "Stack",
-    difficulty: "Easy",
-    description: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-    handlerFunction: "isValid"
-  },
-  {
-    id: "3",
-    title: "Binary Tree Level Order",
-    category: "Tree",
-    difficulty: "Medium",
-    description: "Given the root of a binary tree, return the level order traversal of its nodes' values.",
-    handlerFunction: "levelOrder"
-  },
-  {
-    id: "4",
-    title: "Merge K Sorted Lists",
-    category: "Linked List",
-    difficulty: "Hard",
-    description: "You are given an array of k linked-lists lists, each linked-list is sorted in ascending order.",
-    handlerFunction: "mergeKLists"
-  },
-  {
-    id: "5",
-    title: "LRU Cache",
-    category: "Design",
-    difficulty: "Medium",
-    description: "Design a data structure that follows the constraints of a Least Recently Used (LRU) cache.",
-    handlerFunction: "LRUCache"
-  }
-];
+import Navbar from "../components/Navbar";
+import { problemsApi } from "../api/problems";
+import { getDifficultyBadgeClass } from "../lib/utils";
 
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
-
-const getDifficultyBadgeClass = (difficulty) => {
-  const classes = {
-    Easy: "bg-green-500/20 text-green-400 border-green-500/30",
-    Medium: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-    Hard: "bg-red-500/20 text-red-400 border-red-500/30"
-  };
-  return classes[difficulty] || "";
-};
 
 function ProblemsPage() {
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [difficulty, setDifficulty] = useState("All");
   const [query, setQuery] = useState("");
   const [solvedProblems, setSolvedProblems] = useState(new Set());
-  const [selectedProblem, setSelectedProblem] = useState(null);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setProblems(MOCK_PROBLEMS);
-      setLoading(false);
-    }, 500);
-    
+    const fetchProblems = async () => {
+      try {
+        setLoading(true);
+        const response = await problemsApi.getAllProblems();
+
+        // Remove duplicates based on id - THIS FIXES THE KEY ERROR
+        const uniqueProblems = (response.problems || []).filter(
+          (problem, index, self) =>
+            index === self.findIndex(p => p.id === problem.id)
+        );
+
+        setProblems(uniqueProblems);
+        setError(null);
+      } catch (err) {
+        setError("Failed to load problems. Please try again.");
+        console.error("Error fetching problems:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProblems();
+
     // Load solved problems from localStorage
     const saved = localStorage.getItem('solvedProblems');
     if (saved) {
@@ -98,6 +67,9 @@ function ProblemsPage() {
     }
     setSolvedProblems(updated);
     localStorage.setItem('solvedProblems', JSON.stringify([...updated]));
+    
+    // Dispatch event to update navbar if you added that feature
+    window.dispatchEvent(new Event('solvedProblemsUpdated'));
   };
 
   const difficultyStats = useMemo(
@@ -136,20 +108,7 @@ function ProblemsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-      {/* Navbar */}
-      <nav className="border-b border-white/10 bg-slate-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-5 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-              CodePrep
-            </h1>
-            <div className="flex gap-4 text-sm">
-              <button className="text-white/70 hover:text-white transition-colors">Problems</button>
-              <button className="text-white/70 hover:text-white transition-colors">Progress</button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-7xl mx-auto px-5 py-12 space-y-10">
         {/* HERO */}
@@ -247,6 +206,16 @@ function ProblemsPage() {
               <div className="rounded-2xl border border-white/10 bg-slate-900/50 backdrop-blur-sm p-10 text-center">
                 <p className="text-lg text-white/70">Loading problems...</p>
               </div>
+            ) : error ? (
+              <div className="rounded-2xl border border-white/10 bg-slate-900/50 backdrop-blur-sm p-10 text-center">
+                <p className="text-lg text-red-400">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  Retry
+                </button>
+              </div>
             ) : filteredProblems.length === 0 ? (
               <div className="rounded-2xl border border-white/10 bg-slate-900/50 backdrop-blur-sm p-10 text-center">
                 <p className="text-lg text-white/70">
@@ -257,14 +226,14 @@ function ProblemsPage() {
               filteredProblems.map((problem) => {
                 const isSolved = solvedProblems.has(problem.id);
                 return (
-                  <div
+                  <Link
                     key={problem.id}
-                    className={`group rounded-3xl p-6 flex flex-col md:flex-row gap-6 border transition-all backdrop-blur-sm cursor-pointer ${
+                    to={`/problem/${problem.id}`}
+                    className={`group rounded-3xl p-6 flex flex-col md:flex-row gap-6 border transition-all backdrop-blur-sm block ${
                       isSolved 
                         ? 'border-green-500/30 bg-green-500/5' 
                         : 'border-white/5 hover:border-blue-500/30 bg-slate-900/50'
                     }`}
-                    onClick={() => setSelectedProblem(problem)}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
@@ -292,7 +261,9 @@ function ProblemsPage() {
                         </div>
                       </div>
                       <p className="text-white/70 text-sm leading-relaxed mb-4">
-                        {problem.description.slice(0, 180) + (problem.description.length > 180 ? '...' : '')}
+                        {typeof problem.description === 'string' 
+                          ? problem.description.slice(0, 180) + (problem.description.length > 180 ? '...' : '')
+                          : problem.description?.text?.slice(0, 180) || "Interview prompt"}
                       </p>
                       <div className="flex flex-wrap gap-2 text-xs uppercase tracking-[0.4em]">
                         <span className={`px-3 py-1 rounded-full border ${getDifficultyBadgeClass(problem.difficulty)}`}>
@@ -306,6 +277,7 @@ function ProblemsPage() {
                     <div className="flex flex-col items-center justify-center gap-3">
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           toggleSolved(problem.id);
                         }}
@@ -322,7 +294,7 @@ function ProblemsPage() {
                         <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             )}
