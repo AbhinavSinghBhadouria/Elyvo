@@ -1,32 +1,54 @@
-import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { 
-  ArrowLeftIcon, 
-  Code2Icon, 
-  CheckCircle2Icon,
-  AlertCircleIcon,
-  PlayIcon,
-  InfoIcon
-} from "lucide-react";
-
+import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { problemsApi } from "../api/problems";
-import { getDifficultyBadgeClass } from "../lib/utils";
 
-function ProblemDetailPage() {
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import ProblemDescription from "../components/ProblemDescription";
+import OutputPanel from "../components/OutputPanel";
+import CodeEditorPanel from "../components/CodeEditorPanel";
+import { executeCode } from "../lib/piston";
+import { problemsApi } from "../api/problems";
+
+import toast from "react-hot-toast";
+import confetti from "canvas-confetti";
+
+function ProblemPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [problem, setProblem] = useState(null);
+  const [allProblems, setAllProblems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
+  const [code, setCode] = useState("");
+  const [output, setOutput] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
   const [solvedProblems, setSolvedProblems] = useState(new Set());
 
   useEffect(() => {
-    const fetchProblem = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await problemsApi.getProblemById(id);
-        console.log("Problem data received:", response);
-        setProblem(response);
+        
+        // Fetch current problem
+        const problemResponse = await problemsApi.getProblemById(id);
+        setProblem(problemResponse);
+        
+        // Set initial code based on selected language
+        if (problemResponse.starterCode && problemResponse.starterCode[selectedLanguage]) {
+          setCode(problemResponse.starterCode[selectedLanguage]);
+        }
+        
+        // Fetch all problems for the dropdown
+        const allProblemsResponse = await problemsApi.getAllProblems();
+        const uniqueProblems = (allProblemsResponse.problems || []).filter(
+          (problem, index, self) =>
+            index === self.findIndex(p => p.id === problem.id)
+        );
+        setAllProblems(uniqueProblems);
+        
         setError(null);
       } catch (err) {
         setError("Failed to load problem. Please try again.");
@@ -37,7 +59,7 @@ function ProblemDetailPage() {
     };
 
     if (id) {
-      fetchProblem();
+      fetchData();
     }
 
     // Load solved problems from localStorage
@@ -51,26 +73,106 @@ function ProblemDetailPage() {
     }
   }, [id]);
 
-  const markAsSolved = () => {
-    if (!problem) return;
-    
-    const updated = new Set(solvedProblems);
-    if (updated.has(problem.id)) {
-      updated.delete(problem.id);
-    } else {
-      updated.add(problem.id);
+  // Update code when language changes
+  useEffect(() => {
+    if (problem && problem.starterCode && problem.starterCode[selectedLanguage]) {
+      setCode(problem.starterCode[selectedLanguage]);
+      setOutput(null);
     }
-    setSolvedProblems(updated);
-    localStorage.setItem('solvedProblems', JSON.stringify([...updated]));
+  }, [selectedLanguage, problem]);
+
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setSelectedLanguage(newLang);
   };
 
-  const isSolved = problem ? solvedProblems.has(problem.id) : false;
+  const handleProblemChange = (newProblemId) => {
+    navigate(`/problem/${newProblemId}`);
+  };
+
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.2, y: 0.6 },
+    });
+
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.8, y: 0.6 },
+    });
+  };
+
+  const normalizeOutput = (output) => {
+    return output
+      .trim()
+      .split("\n")
+      .map((line) =>
+        line
+          .trim()
+          // remove spaces after [ and before ]
+          .replace(/\[\s+/g, "[")
+          .replace(/\s+\]/g, "]")
+          // normalize spaces around commas to single space after comma
+          .replace(/\s*,\s*/g, ",")
+      )
+      .filter((line) => line.length > 0)
+      .join("\n");
+  };
+
+  const checkIfTestsPassed = (actualOutput, expectedOutput) => {
+    const normalizedActual = normalizeOutput(actualOutput);
+    const normalizedExpected = normalizeOutput(expectedOutput);
+
+    return normalizedActual === normalizedExpected;
+  };
+
+  const handleRunCode = async () => {
+    setIsRunning(true);
+    setOutput(null);
+
+    const result = await executeCode(selectedLanguage, code);
+    setOutput(result);
+    setIsRunning(false);
+
+    // check if code executed successfully and matches expected output
+    if (result.success) {
+      // Check if problem has expected output for this language
+      if (problem.expectedOutput && problem.expectedOutput[selectedLanguage]) {
+        const expectedOutput = problem.expectedOutput[selectedLanguage];
+        const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
+
+        if (testsPassed) {
+          triggerConfetti();
+          toast.success("All tests passed! Great job!");
+          
+          // Mark problem as solved
+          const updated = new Set(solvedProblems);
+          updated.add(problem.id);
+          setSolvedProblems(updated);
+          localStorage.setItem('solvedProblems', JSON.stringify([...updated]));
+          window.dispatchEvent(new Event('solvedProblemsUpdated'));
+        } else {
+          toast.error("Tests failed. Check your output!");
+        }
+      } else {
+        // If no expected output, just show success for running code
+        toast.success("Code executed successfully!");
+      }
+    } else {
+      toast.error("Code execution failed!");
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#03030b] text-white grid-overlay flex items-center justify-center">
-        <div className="glass-panel rounded-3xl p-10 text-center space-y-4 border border-white/10">
-          <p className="text-lg text-white/70">Loading problem...</p>
+      <div className="h-screen bg-base-100 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg text-white/70">Loading problem...</p>
+          </div>
         </div>
       </div>
     );
@@ -78,203 +180,68 @@ function ProblemDetailPage() {
 
   if (error || !problem) {
     return (
-      <div className="min-h-screen bg-[#03030b] text-white grid-overlay flex items-center justify-center">
-        <div className="glass-panel rounded-3xl p-10 text-center space-y-4 border border-white/10">
-          <p className="text-lg text-red-400">{error || "We couldn't find that problem just yet."}</p>
-          <Link to="/problems" className="btn btn-primary">
-            Back to library
-          </Link>
+      <div className="h-screen bg-base-100 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <p className="text-lg text-red-400">{error || "Problem not found"}</p>
+            <button 
+              onClick={() => navigate('/problems')}
+              className="btn btn-primary"
+            >
+              Back to Problems
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#03030b] text-white grid-overlay">
+    <div className="h-screen bg-base-100 flex flex-col">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-5 py-10 space-y-6">
-        {/* Back Button */}
-        <Link
-          to="/problems"
-          className="inline-flex items-center gap-2 text-white/60 hover:text-white text-sm transition-colors"
-        >
-          <ArrowLeftIcon className="size-4" /> Back to Problems
-        </Link>
+      <div className="flex-1">
+        <PanelGroup direction="horizontal">
+          {/* left panel - problem description */}
+          <Panel defaultSize={40} minSize={30}>
+            <ProblemDescription
+              problem={problem}
+              currentProblemId={problem.id}
+              onProblemChange={handleProblemChange}
+              allProblems={allProblems}
+            />
+          </Panel>
 
-        {/* Header Card */}
-        <div className="glass-panel rounded-3xl p-8 border border-white/10 relative overflow-hidden">
-          <div className="absolute -top-32 right-0 w-96 h-96 bg-gradient-to-br from-primary/20 to-accent/20 opacity-50 blur-[120px]" />
-          
-          <div className="relative flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-            <div className="flex items-start gap-4 flex-1">
-              <div className={`size-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ${
-                isSolved 
-                  ? 'bg-gradient-to-br from-green-500/80 to-emerald-500/80 shadow-green-500/30'
-                  : 'bg-gradient-to-br from-primary/80 to-secondary/80 shadow-primary/30'
-              }`}>
-                {isSolved ? (
-                  <CheckCircle2Icon className="size-7 text-white" />
-                ) : (
-                  <Code2Icon className="size-7 text-white" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl md:text-4xl font-black">{problem.title}</h1>
-                  {isSolved && (
-                    <span className="text-xs px-3 py-1 rounded-full bg-green-500/20 text-green-400 font-semibold border border-green-500/30">
-                      ✓ SOLVED
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                  <span className="text-white/60">{problem.category}</span>
-                  <span className="text-white/40">•</span>
-                  <span className={`badge text-xs ${getDifficultyBadgeClass(problem.difficulty)}`}>
-                    {problem.difficulty}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={markAsSolved}
-                className={`px-6 py-3 rounded-2xl font-bold transition-all border ${
-                  isSolved
-                    ? 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30'
-                    : 'bg-white/5 text-white border-white/10 hover:border-primary/50 hover:bg-white/10'
-                }`}
-              >
-                {isSolved ? '✓ Mark Unsolved' : 'Mark as Solved'}
-              </button>
-              
-              <Link 
-                to="/dashboard" 
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl hover:shadow-xl hover:shadow-primary/30 transition-all whitespace-nowrap"
-              >
-                <PlayIcon className="size-4 fill-current" />
-                Start Solving
-              </Link>
-            </div>
-          </div>
-        </div>
+          <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
 
-        {/* Description */}
-        <div className="glass-panel rounded-3xl p-8 border border-white/10">
-          <div className="flex items-center gap-2 mb-4">
-            <InfoIcon className="size-5 text-blue-400" />
-            <h2 className="text-xl font-bold text-white/90">Problem Description</h2>
-          </div>
-          <div className="prose prose-invert max-w-none">
-            <p className="text-white/75 leading-relaxed whitespace-pre-wrap">
-              {problem.description || "No description available for this problem."}
-            </p>
-          </div>
-        </div>
+          {/* right panel - code editor & output */}
+          <Panel defaultSize={60} minSize={30}>
+            <PanelGroup direction="vertical">
+              {/* Top panel - Code editor */}
+              <Panel defaultSize={70} minSize={30}>
+                <CodeEditorPanel
+                  selectedLanguage={selectedLanguage}
+                  code={code}
+                  isRunning={isRunning}
+                  onLanguageChange={handleLanguageChange}
+                  onCodeChange={setCode}
+                  onRunCode={handleRunCode}
+                />
+              </Panel>
 
-        {/* Examples */}
-        {problem.examples && problem.examples.length > 0 ? (
-          <div className="glass-panel rounded-3xl p-8 border border-white/10">
-            <div className="flex items-center gap-2 mb-6">
-              <CheckCircle2Icon className="size-5 text-green-400" />
-              <h2 className="text-xl font-bold text-white/90">Examples</h2>
-            </div>
-            <div className="space-y-4">
-              {problem.examples.map((example, idx) => (
-                <div 
-                  key={idx} 
-                  className="rounded-2xl border border-white/10 p-5 bg-white/5 space-y-3"
-                >
-                  <p className="text-xs font-bold uppercase tracking-wider text-white/50 mb-3">
-                    Example {idx + 1}
-                  </p>
-                  
-                  <div className="space-y-2 font-mono text-sm">
-                    <div className="bg-black/40 rounded-lg p-3 border border-white/10">
-                      <span className="text-emerald-400 font-semibold">Input:</span>{" "}
-                      <span className="text-white/90">{example.inputText || example.input || "N/A"}</span>
-                    </div>
-                    <div className="bg-black/40 rounded-lg p-3 border border-white/10">
-                      <span className="text-blue-400 font-semibold">Output:</span>{" "}
-                      <span className="text-white/90">{example.outputText || example.output || "N/A"}</span>
-                    </div>
-                  </div>
-                  
-                  {example.explanation && (
-                    <p className="text-sm text-white/60 leading-relaxed pt-2 border-t border-white/10">
-                      <span className="font-semibold text-white/80">Explanation:</span> {example.explanation}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="glass-panel rounded-3xl p-8 border border-white/10">
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2Icon className="size-5 text-green-400" />
-              <h2 className="text-xl font-bold text-white/90">Examples</h2>
-            </div>
-            <p className="text-white/60 text-sm">No examples available for this problem.</p>
-          </div>
-        )}
+              <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
 
-        {/* Constraints */}
-        {problem.constraints && problem.constraints.length > 0 ? (
-          <div className="glass-panel rounded-3xl p-8 border border-white/10">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircleIcon className="size-5 text-amber-400" />
-              <h2 className="text-xl font-bold text-white/90">Constraints</h2>
-            </div>
-            <ul className="space-y-2">
-              {problem.constraints.map((constraint, idx) => (
-                <li key={idx} className="flex items-start gap-3 text-white/70">
-                  <span className="text-primary mt-0.5 flex-shrink-0">▸</span>
-                  <span className="font-mono text-sm">{constraint}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <div className="glass-panel rounded-3xl p-8 border border-white/10">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircleIcon className="size-5 text-amber-400" />
-              <h2 className="text-xl font-bold text-white/90">Constraints</h2>
-            </div>
-            <p className="text-white/60 text-sm">No specific constraints provided for this problem.</p>
-          </div>
-        )}
-
-        {/* Function Signature */}
-        {problem.handlerFunction && (
-          <div className="glass-panel rounded-3xl p-6 border border-white/10">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-3">
-              Function to implement
-            </h3>
-            <div className="bg-black/60 rounded-xl p-4 border border-white/10">
-              <code className="text-sm text-emerald-400 font-mono">
-                {problem.handlerFunction}()
-              </code>
-            </div>
-          </div>
-        )}
-
-        {/* Starter Code Preview */}
-        {problem.starterCode && (
-          <div className="glass-panel rounded-3xl p-6 border border-white/10">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white/50 mb-3">
-              Starter Code Available
-            </h3>
-            <p className="text-white/70 text-sm">
-              Starter code is provided in multiple languages. Click "Start Solving" to begin coding!
-            </p>
-          </div>
-        )}
+              {/* Bottom panel - Output Panel */}
+              <Panel defaultSize={30} minSize={30}>
+                <OutputPanel output={output} />
+              </Panel>
+            </PanelGroup>
+          </Panel>
+        </PanelGroup>
       </div>
     </div>
   );
 }
 
-export default ProblemDetailPage;
+export default ProblemPage;

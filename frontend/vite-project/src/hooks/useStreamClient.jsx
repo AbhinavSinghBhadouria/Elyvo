@@ -98,7 +98,8 @@ const useStreamClient = (session, loadingSession, isHost, isParticipant) => {
         streamClient.disconnectUser().catch(console.error);
       }
     };
-  }, [session, loadingSession, isHost, isParticipant]);
+
+  }, [session, loadingSession, isHost, isParticipant, call, chatClient, streamClient]);
 
   return {
     streamClient,
