@@ -1,10 +1,11 @@
 const PISTON_API = "https://emkc.org/api/v2/piston";
 
 const LANGUAGE_VERSIONS = {
-    javascript: {language:"javascript", version:"18.15.0"},
-    python: {language:"python", version:" 3.10.0"},
-    java: {language:"java", version:"15.0.2"},
-    cpp: {language:"cpp", version:"11.3.0"},
+    javascript: { language: "javascript", version: "18.15.0" },
+    python: { language: "python", version: "3.10.0" },  // Removed extra space
+    java: { language: "java", version: "15.0.2" },
+    cpp: { language: "c++", version: "10.2.0" },  // Changed to c++ and correct version
+    c: { language: "c", version: "10.2.0" },  // Added C language
 }
 
 /**
@@ -15,20 +16,19 @@ const LANGUAGE_VERSIONS = {
  */
 
 export async function executeCode(language, code) {
-    try{
-        const languageConfig = LANGUAGE_VERSIONS[language]
-        if(!languageConfig){
+    try {
+        const languageConfig = LANGUAGE_VERSIONS[language];
+        if (!languageConfig) {
             return {
                 success: false,
                 error: `Language ${language} is not supported.`
             }
         }
 
-   const response= await fetch(`${PISTON_API}/execute`,{
-            method:"POST", // $ symbol denotes template literals and it signals the start of the javascript expression evaluation at runtime.
-            //"https://api.example.com", the full URL becomes "https://api.example.com/execute"). This replaces older concatenation like PISTON_API + '/execute', making code cleaner..
+        const response = await fetch(`${PISTON_API}/execute`, {
+            method: "POST",
             headers: {
-                "Content-Type":"application/json"
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
                 language: languageConfig.language,
@@ -42,19 +42,22 @@ export async function executeCode(language, code) {
             }),
         });
 
-        if(!response.ok){
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Piston API Error:", errorText);
             return {
                 success: false,
-                error: `HTTP error! status: ${response.status}`
+                error: `HTTP error! status: ${response.status} - ${errorText}`
             }
         }
 
         const data = await response.json();
+        console.log("Piston response:", data);  // Debug log
 
-        const output = data.run.output || ""
-        const stderr = data.run.stderr || ""
+        const output = data.run.output || "";
+        const stderr = data.run.stderr || "";
 
-        if(stderr){
+        if (stderr) {
             return {
                 success: false,
                 output: output,
@@ -64,23 +67,25 @@ export async function executeCode(language, code) {
 
         return {
             success: true,
-            output: output || "NO Output"
+            output: output || "No Output"
         }
     }
-    catch(error){
+    catch (error) {
+        console.error("Execution error:", error);
         return {
             success: false,
-            error: `Failed to execute code : ${error.message}`,
+            error: `Failed to execute code: ${error.message}`,
         };
     }
 }
 
-function getFileExtension(language){
+function getFileExtension(language) {
     const extension = {
         javascript: "js",
         python: "py",
         java: "java",
         cpp: "cpp",
+        c: "c",
     }
     return extension[language] || "txt";
-    }
+}

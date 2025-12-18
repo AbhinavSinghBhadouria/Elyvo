@@ -3988,27 +3988,27 @@ void minStackFree(MinStack* obj) {
 export const LANGUAGE_CONFIG = {
   javascript: {
     name: "JavaScript",
-    icon: "/javascript.png",
+    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg",
     monacoLang: "javascript",
   },
   python: {
     name: "Python",
-    icon: "/python.png",
+    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
     monacoLang: "python",
   },
   java: {
     name: "Java",
-    icon: "/java.png",
+    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg",
     monacoLang: "java",
   },
   cpp: {
     name: "C++",
-    icon: "/cpp.png",
+    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
     monacoLang: "cpp",
   },
   c: {
     name: "C",
-    icon: "/c.png",
+    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
     monacoLang: "c",
   },
 };
