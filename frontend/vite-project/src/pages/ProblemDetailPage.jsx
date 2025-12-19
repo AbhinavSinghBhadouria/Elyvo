@@ -128,15 +128,125 @@ function ProblemDetailPage() {
     return normalizedActual === normalizedExpected;
   };
 
+  const generateTestCode = (language, code, handlerFunction, testCase, modifiedIndex) => {
+    const inputs = testCase.input;
+
+    const inputToJava = (arg) => {
+      if (Array.isArray(arg)) {
+        if (arg.every(x => typeof x === 'string')) {
+          return 'new char[]' + JSON.stringify(arg).replace(/"/g, "'");
+        } else {
+          return 'new int[]' + JSON.stringify(arg).replace(/"/g, '');
+        }
+      }
+      if (typeof arg === 'string') return '"' + arg + '"';
+      return arg.toString();
+    };
+
+    if (language === 'javascript') {
+      const inputStrings = inputs.map(arg => JSON.stringify(arg));
+      if (modifiedIndex !== null && modifiedIndex !== undefined) {
+        const paramName = 'param' + modifiedIndex;
+        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
+        return `${code}\nlet ${paramName} = ${inputStrings[modifiedIndex]};\n${handlerFunction}(${callArgs});\nconsole.log(JSON.stringify(${paramName}));`;
+      } else {
+        return `${code}\nconsole.log(JSON.stringify(${handlerFunction}(${inputStrings.join(', ')})));`;
+      }
+    }
+    if (language === 'python') {
+      const inputStrings = inputs.map(arg => {
+        if (Array.isArray(arg)) return JSON.stringify(arg).replace(/"/g, "'");
+        if (typeof arg === 'string') return repr(arg);
+        return arg.toString();
+      });
+      if (modifiedIndex !== null && modifiedIndex !== undefined) {
+        const paramName = 'param' + modifiedIndex;
+        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
+        return `${code}\n${paramName} = ${inputStrings[modifiedIndex]}\nSolution().${handlerFunction}(${callArgs})\nprint(${paramName})`;
+      } else {
+        return `${code}\nprint(Solution().${handlerFunction}(${inputStrings.join(', ')}))`;
+      }
+    }
+    if (language === 'java') {
+      const inputStrings = inputs.map(inputToJava);
+      if (modifiedIndex !== null && modifiedIndex !== undefined) {
+        const paramType = Array.isArray(inputs[modifiedIndex]) && inputs[modifiedIndex].every(x => typeof x === 'string') ? 'char[]' : 'int[]';
+        const paramName = 'param' + modifiedIndex;
+        const paramInit = inputToJava(inputs[modifiedIndex]);
+        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
+        return `import java.util.*;\n${code}\nclass Main {\n  public static void main(String[] args) {\n    Solution s = new Solution();\n    ${paramType} ${paramName} = ${paramInit};\n    s.${handlerFunction}(${callArgs});\n    System.out.println(Arrays.toString(${paramName}));\n  }\n}`;
+      } else {
+        return `import java.util.*;\n${code}\nclass Main {\n  public static void main(String[] args) {\n    Solution s = new Solution();\n    System.out.println(${handlerFunction}(${inputStrings.join(', ')}));\n  }\n}`;
+      }
+    }
+    if (language === 'cpp') {
+      const inputStrings = inputs.map(arg => {
+        if (Array.isArray(arg)) {
+          if (arg.every(x => typeof x === 'string')) {
+            return '{' + arg.map(c => "'" + c + "'").join(',') + '}';
+          } else {
+            return '{' + arg.join(',') + '}';
+          }
+        }
+        if (typeof arg === 'string') return '"' + arg + '"';
+        return arg.toString();
+      });
+      const isReturnArray = problem.expectedOutput && problem.expectedOutput.cpp && problem.expectedOutput.cpp.startsWith('[');
+      if (modifiedIndex !== null && modifiedIndex !== undefined) {
+        const paramType = Array.isArray(inputs[modifiedIndex]) && inputs[modifiedIndex].every(x => typeof x === 'string') ? 'std::vector<char>' : 'std::vector<int>';
+        const paramName = 'param' + modifiedIndex;
+        const paramInit = inputStrings[modifiedIndex];
+        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
+        return `#include <iostream>
+#include <vector>
+${code}
+int main() {
+    ${paramType} ${paramName} = ${paramInit};
+    ${problem.handlerFunction}(${callArgs});
+    std::cout << "[";
+    for(size_t i = 0; i < ${paramName}.size(); ++i) {
+        std::cout << ${paramName}[i];
+        if(i < ${paramName}.size() - 1) std::cout << ",";
+    }
+    std::cout << "]" << std::endl;
+    return 0;
+}`;
+      } else {
+        const callArgs = inputStrings.join(', ');
+        if (isReturnArray) {
+          return `#include <iostream>
+#include <vector>
+${code}
+int main() {
+    auto result = ${problem.handlerFunction}(${callArgs});
+    std::cout << "[";
+    for(size_t i = 0; i < result.size(); ++i) {
+        std::cout << result[i];
+        if(i < result.size() - 1) std::cout << ",";
+    }
+    std::cout << "]" << std::endl;
+    return 0;
+}`;
+        } else {
+          return `#include <iostream>
+${code}
+int main() {
+    auto result = ${problem.handlerFunction}(${callArgs});
+    std::cout << result << std::endl;
+    return 0;
+}`;
+        }
+      }
+    }
+  };
+
   const handleRunCode = async () => {
     setIsRunning(true);
     setOutput(null);
 
-    // Extract test cases from problem data (if available)
-    const testCases = problem.testCases || [];
-
-    // Pass test cases to executeCode - the new piston.js will auto-generate main() with these
-    const result = await executeCode(selectedLanguage, code, testCases);
+    const testCase = problem.testCases[0];
+    const fullCode = generateTestCode(selectedLanguage, code, problem.handlerFunction, testCase, problem.modifiedParameterIndex);
+    const result = await executeCode(selectedLanguage, fullCode);
     setOutput(result);
     setIsRunning(false);
 

@@ -41,6 +41,14 @@ public:
 }`
     },
     handlerFunction: "twoSum",
+    expectedOutput: {
+      javascript: "[0,1]",
+      python: "[0,1]",
+      java: "[0,1]",
+      cpp: "[0,1]",
+      c: "[0,1]"
+    },
+    modifiedParameterIndex: null,
     testCases: [
       { input: [[2,7,11,15], 9], output: [0,1] },
       { input: [[3,2,4], 6], output: [1,2] },
@@ -103,6 +111,14 @@ public:
 }`
     },
     handlerFunction: "reverseString",
+    expectedOutput: {
+      javascript: '["o","l","l","e","h"]',
+      python: "['o','l','l','e','h']",
+      java: "[o, l, l, e, h]",
+      cpp: "[o,l,l,e,h]",
+      c: "[o,l,l,e,h]"
+    },
+    modifiedParameterIndex: 0,
     testCases: [
       { input: [["h","e","l","l","o"]], output: ["o","l","l","e","h"] },
       { input: [["H","a","n","n","a","h"]], output: ["h","a","n","n","a","H"] }
@@ -161,6 +177,14 @@ public:
 }`
     },
     handlerFunction: "isPalindrome",
+    expectedOutput: {
+      javascript: "true",
+      python: "True",
+      java: "true",
+      cpp: "1",
+      c: "1"
+    },
+    modifiedParameterIndex: null,
     testCases: [
       { input: [121], output: true },
       { input: [-121], output: false },
