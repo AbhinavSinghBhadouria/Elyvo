@@ -12,7 +12,7 @@ import { problemsApi } from "../api/problems";
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
 
-function ProblemPage() {
+function ProblemDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -121,7 +121,7 @@ function ProblemPage() {
       .join("\n");
   };
 
-  const checkIfTestsPassed = (actualOutput, expectedOutput) => {
+  const checkIfTestsPassed = (actualOutput, expectedOutput)=>{
     const normalizedActual = normalizeOutput(actualOutput);
     const normalizedExpected = normalizeOutput(expectedOutput);
 
@@ -132,7 +132,11 @@ function ProblemPage() {
     setIsRunning(true);
     setOutput(null);
 
-    const result = await executeCode(selectedLanguage, code);
+    // Extract test cases from problem data (if available)
+    const testCases = problem.testCases || [];
+
+    // Pass test cases to executeCode - the new piston.js will auto-generate main() with these
+    const result = await executeCode(selectedLanguage, code, testCases);
     setOutput(result);
     setIsRunning(false);
 
@@ -244,4 +248,4 @@ function ProblemPage() {
   );
 }
 
-export default ProblemPage;
+export default ProblemDetailPage;
