@@ -128,6 +128,7 @@ function ProblemDetailPage() {
     return normalizedActual === normalizedExpected;
   };
 
+
   const generateTestCode = (language, code, handlerFunction, testCase, modifiedIndex) => {
     const inputs = testCase.input;
 
@@ -141,6 +142,24 @@ function ProblemDetailPage() {
       }
       if (typeof arg === 'string') return '"' + arg + '"';
       return arg.toString();
+    };
+
+    const isCharArray = (arr) => {
+      return Array.isArray(arr) && arr.every(x => typeof x === 'string' && x.length === 1);
+    };
+
+    const getCppIncludes = (code) => {
+      let includes = ['#include <iostream>'];
+      if (code.includes('vector') || modifiedIndex !== null) includes.push('#include <vector>');
+      if (code.includes('string')) includes.push('#include <string>');
+      if (code.includes('stack')) includes.push('#include <stack>');
+      if (code.includes('queue')) includes.push('#include <queue>');
+      if (code.includes('algorithm') || code.includes('reverse') || code.includes('sort')) includes.push('#include <algorithm>');
+      if (code.includes('unordered_map')) includes.push('#include <unordered_map>');
+      if (code.includes('unordered_set')) includes.push('#include <unordered_set>');
+      if (code.includes('map')) includes.push('#include <map>');
+      if (code.includes('set')) includes.push('#include <set>');
+      return includes.join('\n');
     };
 
     if (language === 'javascript') {
@@ -170,7 +189,7 @@ function ProblemDetailPage() {
     if (language === 'java') {
       const inputStrings = inputs.map(inputToJava);
       if (modifiedIndex !== null && modifiedIndex !== undefined) {
-        const paramType = Array.isArray(inputs[modifiedIndex]) && inputs[modifiedIndex].every(x => typeof x === 'string') ? 'char[]' : 'int[]';
+        const paramType = isCharArray(inputs[modifiedIndex]) ? 'char[]' : 'int[]';
         const paramName = 'param' + modifiedIndex;
         const paramInit = inputToJava(inputs[modifiedIndex]);
         const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
@@ -181,24 +200,25 @@ function ProblemDetailPage() {
     }
     if (language === 'cpp') {
       const inputStrings = inputs.map(arg => {
-        if (Array.isArray(arg)) {
-          if (arg.every(x => typeof x === 'string')) {
-            return '{' + arg.map(c => "'" + c + "'").join(',') + '}';
-          } else {
-            return '{' + arg.join(',') + '}';
-          }
+        if (isCharArray(arg)) {
+          return '{' + arg.map(c => `'${c}'`).join(',') + '}';
+        } else if (Array.isArray(arg)) {
+          return '{' + arg.join(',') + '}';
         }
-        if (typeof arg === 'string') return '"' + arg + '"';
+        if (typeof arg === 'string') return `"${arg}"`;
         return arg.toString();
       });
+      
       const isReturnArray = problem.expectedOutput && problem.expectedOutput.cpp && problem.expectedOutput.cpp.startsWith('[');
+      const includes = getCppIncludes(code);
+      
       if (modifiedIndex !== null && modifiedIndex !== undefined) {
-        const paramType = Array.isArray(inputs[modifiedIndex]) && inputs[modifiedIndex].every(x => typeof x === 'string') ? 'std::vector<char>' : 'std::vector<int>';
+        const paramType = isCharArray(inputs[modifiedIndex]) ? 'std::vector<char>' : 'std::vector<int>';
         const paramName = 'param' + modifiedIndex;
         const paramInit = inputStrings[modifiedIndex];
         const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
-        return `#include <iostream>
-#include <vector>
+        
+        return `${includes}
 ${code}
 int main() {
     ${paramType} ${paramName} = ${paramInit};
@@ -214,8 +234,7 @@ int main() {
       } else {
         const callArgs = inputStrings.join(', ');
         if (isReturnArray) {
-          return `#include <iostream>
-#include <vector>
+          return `${includes}
 ${code}
 int main() {
     auto result = ${problem.handlerFunction}(${callArgs});
@@ -228,7 +247,7 @@ int main() {
     return 0;
 }`;
         } else {
-          return `#include <iostream>
+          return `${includes}
 ${code}
 int main() {
     auto result = ${problem.handlerFunction}(${callArgs});
