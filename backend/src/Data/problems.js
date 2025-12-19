@@ -1,3 +1,4 @@
+
 // Data/problems.js - Sample problems for seeding database
 export default [
   {
@@ -9,20 +10,35 @@ export default [
     videoId: "8-k1C6ehKuw",
     description: `Given an array of integers \`nums\` and an integer \`target\`, return indices of the two numbers such that they add up to \`target\`.
 
-You may assume that each input would have **exactly one solution**, and you may not use the same element twice.`,
+You may assume that each input would have **exactly one solution**, and you may not use the same element twice.
+
+## Approach & Strategy
+This is a classic problem that can be solved efficiently using a Hash Map (or dictionary). The key insight is to store each number we've seen along with its index as we iterate through the array.
+
+### Key Points:
+- **Time Complexity**: O(n) - we make only one pass through the array
+- **Space Complexity**: O(n) - we store up to n elements in the hash map
+- **Pattern**: Hash Table/Map for lookup optimization`,
     examples: [
       {
         id: 1,
         inputText: "nums = [2,7,11,15], target = 9",
         outputText: "[0,1]",
         explanation: "Because nums[0] + nums[1] == 9, we return [0, 1]."
+      },
+      {
+        id: 2,
+        inputText: "nums = [3,2,4], target = 6",
+        outputText: "[1,2]",
+        explanation: "nums[1] + nums[2] = 2 + 4 = 6, so we return [1, 2]."
       }
     ],
     starterCode: {
       javascript: `function twoSum(nums, target) {
   // Write your code here
 };`,
-      cpp: `class Solution {
+      cpp: `#include <vector>
+class Solution {
 public:
     vector<int> twoSum(vector<int>& nums, int target) {
         // Example: vector<int> nums = {2,7,11,15};
@@ -69,6 +85,7 @@ public:
     ],
     tags: ["Array", "Hash Table"]
   },
+
   {
     id: "reverse-string",
     title: "Reverse String",
@@ -78,20 +95,43 @@ public:
     videoId: "",
     description: `Write a function that reverses a string. The input string is given as an array of characters \`s\`.
 
-You must do this by modifying the input array **in-place** with O(1) extra memory.`,
+You must do this by modifying the input array **in-place** with O(1) extra memory.
+
+## Approach & Strategy
+This is a classic two-pointer problem that demonstrates the efficiency of the two-pointer technique. We use one pointer at the beginning and one at the end of the array, swapping elements until we meet in the middle.
+
+### Key Points:
+- **Time Complexity**: O(n/2) = O(n) - we process roughly half the array
+- **Space Complexity**: O(1) - only using two pointers, no extra space
+- **Pattern**: Two Pointers technique for in-place modification
+- **Important**: Must modify the original array, not return a new one
+
+### Two-Pointer Pattern:
+1. Initialize left pointer at start, right pointer at end
+2. While left < right:
+   - Swap elements at left and right positions
+   - Move left pointer right, right pointer left`,
     examples: [
       {
         id: 1,
         inputText: 's = ["h","e","l","l","o"]',
         outputText: '["o","l","l","e","h"]',
-        explanation: ""
+        explanation: "The array is reversed in-place: h→o, e→l, l→l, l→e, o→h"
+      },
+      {
+        id: 2,
+        inputText: 's = ["H","a","n","n","a","h"]',
+        outputText: '["h","a","n","n","a","H"]',
+        explanation: "Capital and lowercase letters are preserved during reversal"
       }
     ],
     starterCode: {
       javascript: `function reverseString(s) {
   // Write your code here
 };`,
-      cpp: `class Solution {
+      cpp: `#include <vector>
+#include <algorithm>
+class Solution {
 public:
     void reverseString(vector<char>& s) {
         // Example: vector<char> s = {'h', 'e', 'l', 'l', 'o'};
@@ -135,6 +175,7 @@ public:
     ],
     tags: ["String", "Two Pointers"]
   },
+
   {
     id: "palindrome-number",
     title: "Palindrome Number",
@@ -142,19 +183,39 @@ public:
     category: "Math",
     order: 3,
     videoId: "",
-    description: `Given an integer \`x\`, return \`true\` if \`x\` is a **palindrome**, and \`false\` otherwise.`,
+    description: `Given an integer \`x\`, return \`true\` if \`x\` is a **palindrome**, and \`false\` otherwise.
+
+## Approach & Strategy
+This problem can be solved by reversing the number and comparing it with the original. However, we must be careful about negative numbers (they can never be palindromes) and integer overflow when reversing.
+
+### Key Points:
+- **Time Complexity**: O(log n) - we process about half the digits
+- **Space Complexity**: O(1) - only using a few variables
+- **Pattern**: Mathematical manipulation with digit reversal
+- **Edge Cases**: Negative numbers, single digits, leading zeros
+
+### Important Considerations:
+1. **Negative Numbers**: All negative numbers are not palindromes (they start with -)
+2. **Single Digits**: All single-digit numbers are palindromes
+3. **No String Conversion**: Try to solve without converting to string for better performance`,
     examples: [
       {
         id: 1,
         inputText: "x = 121",
         outputText: "true",
-        explanation: "121 reads as 121 from left to right and from right to left."
+        explanation: "121 reads as 121 from left to right and from right to left - it's a palindrome."
       },
       {
         id: 2,
         inputText: "x = -121",
         outputText: "false",
         explanation: "From left to right, it reads -121. From right to left, it becomes 121-. Therefore it is not a palindrome."
+      },
+      {
+        id: 3,
+        inputText: "x = 10",
+        outputText: "false",
+        explanation: "10 reads as 01 from right to left, which is different from 10."
       }
     ],
     starterCode: {
