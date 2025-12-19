@@ -32,6 +32,14 @@ const problemSchema = new mongoose.Schema({
   solution: String,
   hints: [String],
   tags: [String],
+  expectedOutput: {
+    javascript: String,
+    cpp: String,
+    c: String,
+    python: String,
+    java: String
+  },
+  modifiedParameterIndex: Number,
   handlerFunction: String
 }, { timestamps: true });
 
