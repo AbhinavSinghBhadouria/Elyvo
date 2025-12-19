@@ -24,6 +24,9 @@ You may assume that each input would have **exactly one solution**, and you may 
       cpp: `class Solution {
 public:
     vector<int> twoSum(vector<int>& nums, int target) {
+        // Example: vector<int> nums = {2,7,11,15};
+        // int target = 9;
+        
         
     }
 };`,
