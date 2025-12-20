@@ -37,8 +37,19 @@ function ProblemDetailPage() {
         setProblem(problemResponse);
         
         // Set initial code based on selected language
+        // NOTE: Since you changed to CodeChef style, ensure your DB 
+        // has starter code that includes the main() function!
         if (problemResponse.starterCode && problemResponse.starterCode[selectedLanguage]) {
           setCode(problemResponse.starterCode[selectedLanguage]);
+        } else {
+            // Fallback defaults if DB is empty
+            const defaults = {
+                cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your code here\n    return 0;\n}",
+                java: "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}",
+                python: "# Write your code here\nimport sys\n",
+                javascript: "// Write your code here\n"
+            };
+            setCode(defaults[selectedLanguage] || "");
         }
         
         // Fetch all problems for the dropdown
@@ -71,13 +82,24 @@ function ProblemDetailPage() {
         console.error('Error loading solved problems:', e);
       }
     }
-  }, [id]);
+  }, [id, selectedLanguage]); // Added selectedLanguage to dependency to handle defaults better
 
   // Update code when language changes
   useEffect(() => {
-    if (problem && problem.starterCode && problem.starterCode[selectedLanguage]) {
-      setCode(problem.starterCode[selectedLanguage]);
-      setOutput(null);
+    if (problem) {
+        if (problem.starterCode && problem.starterCode[selectedLanguage]) {
+            setCode(problem.starterCode[selectedLanguage]);
+        } else {
+             // Fallback defaults when switching language
+             const defaults = {
+                cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Write your code here\n    return 0;\n}",
+                java: "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}",
+                python: "# Write your code here\nimport sys\n",
+                javascript: "// Write your code here\n"
+            };
+            setCode(defaults[selectedLanguage] || "");
+        }
+        setOutput(null);
     }
   }, [selectedLanguage, problem]);
 
@@ -104,193 +126,60 @@ function ProblemDetailPage() {
     });
   };
 
-  const normalizeOutput = (output) => {
-    return output
+  const normalizeOutput = (str) => {
+    if (!str) return "";
+    return str
       .trim()
       .split("\n")
-      .map((line) =>
-        line
-          .trim()
-          // remove spaces after [ and before ]
-          .replace(/\[\s+/g, "[")
-          .replace(/\s+\]/g, "]")
-          // normalize spaces around commas to single space after comma
-          .replace(/\s*,\s*/g, ",")
-      )
+      .map((line) => line.trim())
       .filter((line) => line.length > 0)
       .join("\n");
   };
 
-  const checkIfTestsPassed = (actualOutput, expectedOutput)=>{
-    const normalizedActual = normalizeOutput(actualOutput);
-    const normalizedExpected = normalizeOutput(expectedOutput);
-
-    return normalizedActual === normalizedExpected;
-  };
-
-
-  const generateTestCode = (language, code, handlerFunction, testCase, modifiedIndex) => {
-    const inputs = testCase.input;
-
-    const inputToJava = (arg) => {
-      if (Array.isArray(arg)) {
-        if (arg.every(x => typeof x === 'string')) {
-          return 'new char[]' + JSON.stringify(arg).replace(/"/g, "'");
-        } else {
-          return 'new int[]' + JSON.stringify(arg).replace(/"/g, '');
-        }
-      }
-      if (typeof arg === 'string') return '"' + arg + '"';
-      return arg.toString();
-    };
-
-    const isCharArray = (arr) => {
-      return Array.isArray(arr) && arr.every(x => typeof x === 'string' && x.length === 1);
-    };
-
-    const getCppIncludes = (code) => {
-      let includes = [];
-      const includeMap = {
-        'iostream': '#include <iostream>',
-        'vector': '#include <vector>',
-        'string': '#include <string>',
-        'stack': '#include <stack>',
-        'queue': '#include <queue>',
-        'algorithm': '#include <algorithm>',
-        'unordered_map': '#include <unordered_map>',
-        'unordered_set': '#include <unordered_set>',
-        'map': '#include <map>',
-        'set': '#include <set>'
-      };
-      Object.keys(includeMap).forEach(key => {
-        if (code.includes(key) && !code.includes(includeMap[key])) {
-          includes.push(includeMap[key]);
-        }
-      });
-      // Always include iostream for output
-      if (!code.includes('#include <iostream>')) {
-        includes.unshift('#include <iostream>');
-      }
-      return includes.join('\n');
-    };
-
-    if (language === 'javascript') {
-      const inputStrings = inputs.map(arg => JSON.stringify(arg));
-      if (modifiedIndex !== null && modifiedIndex !== undefined) {
-        const paramName = 'param' + modifiedIndex;
-        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
-        return `${code}\nlet ${paramName} = ${inputStrings[modifiedIndex]};\n${handlerFunction}(${callArgs});\nconsole.log(JSON.stringify(${paramName}));`;
-      } else {
-        return `${code}\nconsole.log(JSON.stringify(${handlerFunction}(${inputStrings.join(', ')})));`;
-      }
+  // Helper to convert array inputs into a string for Standard Input
+  // Example: [5, [1, 2]] -> "5\n1 2"
+  const formatInputForStdIn = (input) => {
+    if (Array.isArray(input)) {
+      return input.map(item => {
+        if (Array.isArray(item)) return item.join(" ");
+        return item;
+      }).join("\n");
     }
-    if (language === 'python') {
-      const inputStrings = inputs.map(arg => {
-        if (Array.isArray(arg)) return JSON.stringify(arg).replace(/"/g, "'");
-        if (typeof arg === 'string') return repr(arg);
-        return arg.toString();
-      });
-      if (modifiedIndex !== null && modifiedIndex !== undefined) {
-        const paramName = 'param' + modifiedIndex;
-        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
-        return `${code}\n${paramName} = ${inputStrings[modifiedIndex]}\nSolution().${handlerFunction}(${callArgs})\nprint(${paramName})`;
-      } else {
-        return `${code}\nprint(Solution().${handlerFunction}(${inputStrings.join(', ')}))`;
-      }
-    }
-    if (language === 'java') {
-      const inputStrings = inputs.map(inputToJava);
-      if (modifiedIndex !== null && modifiedIndex !== undefined) {
-        const paramType = isCharArray(inputs[modifiedIndex]) ? 'char[]' : 'int[]';
-        const paramName = 'param' + modifiedIndex;
-        const paramInit = inputToJava(inputs[modifiedIndex]);
-        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
-        return `import java.util.*;\n${code}\nclass Main {\n  public static void main(String[] args) {\n    Solution s = new Solution();\n    ${paramType} ${paramName} = ${paramInit};\n    s.${handlerFunction}(${callArgs});\n    System.out.println(Arrays.toString(${paramName}));\n  }\n}`;
-      } else {
-        return `import java.util.*;\n${code}\nclass Main {\n  public static void main(String[] args) {\n    Solution s = new Solution();\n    System.out.println(${handlerFunction}(${inputStrings.join(', ')}));\n  }\n}`;
-      }
-    }
-    if (language === 'cpp') {
-      const inputStrings = inputs.map(arg => {
-        if (isCharArray(arg)) {
-          return '{' + arg.map(c => `'${c}'`).join(',') + '}';
-        } else if (Array.isArray(arg)) {
-          return '{' + arg.join(',') + '}';
-        }
-        if (typeof arg === 'string') return `"${arg}"`;
-        return arg.toString();
-      });
-      
-      const isReturnArray = problem.expectedOutput && problem.expectedOutput.cpp && problem.expectedOutput.cpp.startsWith('[');
-      const includes = getCppIncludes(code);
-      
-      if (modifiedIndex !== null && modifiedIndex !== undefined) {
-        const paramType = isCharArray(inputs[modifiedIndex]) ? 'std::vector<char>' : 'std::vector<int>';
-        const paramName = 'param' + modifiedIndex;
-        const paramInit = inputStrings[modifiedIndex];
-        const callArgs = inputStrings.map((s, i) => i === modifiedIndex ? paramName : s).join(', ');
-        
-        return `${includes}
-${code}
-int main() {
-    ${paramType} ${paramName} = ${paramInit};
-    ${problem.handlerFunction}(${callArgs});
-    std::cout << "[";
-    for(size_t i = 0; i < ${paramName}.size(); ++i) {
-        std::cout << ${paramName}[i];
-        if(i < ${paramName}.size() - 1) std::cout << ",";
-    }
-    std::cout << "]" << std::endl;
-    return 0;
-}`;
-      } else {
-        const callArgs = inputStrings.join(', ');
-        if (isReturnArray) {
-          return `${includes}
-${code}
-int main() {
-    auto result = ${problem.handlerFunction}(${callArgs});
-    std::cout << "[";
-    for(size_t i = 0; i < result.size(); ++i) {
-        std::cout << result[i];
-        if(i < result.size() - 1) std::cout << ",";
-    }
-    std::cout << "]" << std::endl;
-    return 0;
-}`;
-        } else {
-          return `${includes}
-${code}
-int main() {
-    auto result = ${problem.handlerFunction}(${callArgs});
-    std::cout << result << std::endl;
-    return 0;
-}`;
-        }
-      }
-    }
+    return String(input);
   };
 
   const handleRunCode = async () => {
+    if (!problem || !problem.testCases || problem.testCases.length === 0) {
+        toast.error("No test cases found for this problem.");
+        return;
+    }
+
     setIsRunning(true);
     setOutput(null);
 
+    // 1. Get the first test case
     const testCase = problem.testCases[0];
-    const fullCode = generateTestCode(selectedLanguage, code, problem.handlerFunction, testCase, problem.modifiedParameterIndex);
-    const result = await executeCode(selectedLanguage, fullCode);
+    
+    // 2. Format input for Standard I/O (CodeChef style)
+    const stdin = formatInputForStdIn(testCase.input);
+
+    // 3. Execute the raw code directly with the input
+    const result = await executeCode(selectedLanguage, code, stdin);
+    
     setOutput(result);
     setIsRunning(false);
 
     // check if code executed successfully and matches expected output
     if (result.success) {
-      // Check if problem has expected output for this language
       if (problem.expectedOutput && problem.expectedOutput[selectedLanguage]) {
         const expectedOutput = problem.expectedOutput[selectedLanguage];
-        const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
+        
+        const cleanActual = normalizeOutput(result.output);
+        const cleanExpected = normalizeOutput(expectedOutput);
 
-        if (testsPassed) {
+        if (cleanActual === cleanExpected) {
           triggerConfetti();
-          toast.success("All tests passed! Great job!");
+          toast.success("Correct Answer!");
           
           // Mark problem as solved
           const updated = new Set(solvedProblems);
@@ -299,14 +188,16 @@ int main() {
           localStorage.setItem('solvedProblems', JSON.stringify([...updated]));
           window.dispatchEvent(new Event('solvedProblemsUpdated'));
         } else {
-          toast.error("Tests failed. Check your output!");
+          toast.error("Wrong Answer");
+          // Useful for debugging
+          // console.log("EXP:", cleanExpected);
+          // console.log("ACT:", cleanActual);
         }
       } else {
-        // If no expected output, just show success for running code
         toast.success("Code executed successfully!");
       }
     } else {
-      toast.error("Code execution failed!");
+      toast.error("Compilation Error or Runtime Error");
     }
   };
 
