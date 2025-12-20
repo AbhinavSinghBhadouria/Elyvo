@@ -149,16 +149,28 @@ function ProblemDetailPage() {
     };
 
     const getCppIncludes = (code) => {
-      let includes = ['#include <iostream>'];
-      if (code.includes('vector') || modifiedIndex !== null) includes.push('#include <vector>');
-      if (code.includes('string')) includes.push('#include <string>');
-      if (code.includes('stack')) includes.push('#include <stack>');
-      if (code.includes('queue')) includes.push('#include <queue>');
-      if (code.includes('algorithm') || code.includes('reverse') || code.includes('sort')) includes.push('#include <algorithm>');
-      if (code.includes('unordered_map')) includes.push('#include <unordered_map>');
-      if (code.includes('unordered_set')) includes.push('#include <unordered_set>');
-      if (code.includes('map')) includes.push('#include <map>');
-      if (code.includes('set')) includes.push('#include <set>');
+      let includes = [];
+      const includeMap = {
+        'iostream': '#include <iostream>',
+        'vector': '#include <vector>',
+        'string': '#include <string>',
+        'stack': '#include <stack>',
+        'queue': '#include <queue>',
+        'algorithm': '#include <algorithm>',
+        'unordered_map': '#include <unordered_map>',
+        'unordered_set': '#include <unordered_set>',
+        'map': '#include <map>',
+        'set': '#include <set>'
+      };
+      Object.keys(includeMap).forEach(key => {
+        if (code.includes(key) && !code.includes(includeMap[key])) {
+          includes.push(includeMap[key]);
+        }
+      });
+      // Always include iostream for output
+      if (!code.includes('#include <iostream>')) {
+        includes.unshift('#include <iostream>');
+      }
       return includes.join('\n');
     };
 
