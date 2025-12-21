@@ -1,4 +1,12 @@
 import { getDifficultyBadgeClass } from "../lib/utils";
+
+/**
+ * ProblemDescription component displays detailed problem information
+ * @param {Object} problem - The problem data object
+ * @param {string} currentProblemId - ID of currently selected problem
+ * @param {Function} onProblemChange - Callback for problem selection change
+ * @param {Array} allProblems - Array of all available problems
+ */
 function ProblemDescription({ problem, currentProblemId, onProblemChange, allProblems }) {
   return (
     <div className="h-full overflow-y-auto bg-base-200">
