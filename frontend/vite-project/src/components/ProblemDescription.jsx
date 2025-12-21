@@ -37,7 +37,7 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
             onChange={(e) => onProblemChange(e.target.value)}
             className="select select-bordered select-sm flex-1 bg-base-100 focus:outline-none focus:border-primary"
           >
-            {allProblems.map((p) => (
+            {(allProblems || []).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title}
               </option>
@@ -102,6 +102,15 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
                   <span className="text-sm font-medium text-white/70">
                     Example {idx + 1}
                   </span>
+        {/* EXAMPLES SECTION */}
+        <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
+          <h2 className="text-xl font-bold mb-4 text-base-content">Examples</h2>
+          <div className="space-y-4">
+            {(problem.examples || []).map((example, idx) => (
+              <div key={idx}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="badge badge-sm">{idx + 1}</span>
+                  <p className="font-semibold text-base-content">Example {idx + 1}</p>
                 </div>
                 
                 <div className="p-4 space-y-3">
