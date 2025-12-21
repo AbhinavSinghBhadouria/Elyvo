@@ -9,7 +9,6 @@ import ProblemDescription from '../components/ProblemDescription';
 import { executeCode } from '../lib/piston';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
-import ProblemDescription from '../components/ProblemDescription';
 
 function ProblemDetailPage() {
   const { id } = useParams();
