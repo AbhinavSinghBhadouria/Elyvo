@@ -10,6 +10,77 @@ import { executeCode } from '../lib/piston';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 
+// Starter code templates with all necessary imports
+const STARTER_CODE_TEMPLATES = {
+  javascript: `// Write your code here
+const readline = require('readline');
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+let input = [];
+rl.on('line', (line) => {
+    input.push(line);
+}).on('close', () => {
+    // Your solution here
+});
+`,
+
+  python: `# Write your code here
+import sys
+
+def solve():
+    # Your solution here
+    pass
+
+if __name__ == "__main__":
+    solve()
+`,
+
+  java: `import java.util.*;
+import java.io.*;
+
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        
+        // Write your code here
+        
+        sc.close();
+    }
+}
+`,
+
+  cpp: `#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <queue>
+#include <stack>
+using namespace std;
+
+int main() {
+    // Write your code here
+    
+    return 0;
+}
+`,
+
+  c: `#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main() {
+    // Write your code here
+    
+    return 0;
+}
+`
+};
+
 function ProblemDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
