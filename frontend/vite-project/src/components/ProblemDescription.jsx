@@ -90,7 +90,7 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
               Examples
             </h2>
             
-            {problem.examples.map((example, idx) => (
+            {(problem.examples || []).map((example, idx) => (
               <div 
                 key={idx}
                 className="bg-base-200/50 rounded-lg border border-base-300 overflow-hidden hover:border-base-300/60 transition-colors"
@@ -102,15 +102,6 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
                   <span className="text-sm font-medium text-white/70">
                     Example {idx + 1}
                   </span>
-        {/* EXAMPLES SECTION */}
-        <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
-          <h2 className="text-xl font-bold mb-4 text-base-content">Examples</h2>
-          <div className="space-y-4">
-            {(problem.examples || []).map((example, idx) => (
-              <div key={idx}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="badge badge-sm">{idx + 1}</span>
-                  <p className="font-semibold text-base-content">Example {idx + 1}</p>
                 </div>
                 
                 <div className="p-4 space-y-3">
