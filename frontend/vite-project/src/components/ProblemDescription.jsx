@@ -37,7 +37,7 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
             onChange={(e) => onProblemChange(e.target.value)}
             className="select select-bordered select-sm flex-1 bg-base-100 focus:outline-none focus:border-primary"
           >
-            {allProblems.map((p) => (
+            {(allProblems || []).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title}
               </option>
@@ -90,7 +90,7 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
               Examples
             </h2>
             
-            {problem.examples.map((example, idx) => (
+            {(problem.examples || []).map((example, idx) => (
               <div 
                 key={idx}
                 className="bg-base-200/50 rounded-lg border border-base-300 overflow-hidden hover:border-base-300/60 transition-colors"
