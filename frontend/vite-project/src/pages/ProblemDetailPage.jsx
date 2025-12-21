@@ -1,225 +1,207 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { problemsApi } from '../api/problems';
+import Navbar from '../components/Navbar';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import OutputPanel from '../components/OutputPanel';
+import CodeEditorPanel from '../components/CodeEditorPanel';
+import ProblemDescription from '../components/ProblemDescription';
+import { executeCode } from '../lib/piston';
+import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
+import ProblemDescription from '../components/ProblemDescription';
 
-const ProblemDescription = ({ 
-  problem, 
-  currentProblemId, 
-  onProblemChange, 
-  allProblems 
-}) => {
-  const getDifficultyColor = (difficulty) => {
-    const colors = {
-      easy: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-      medium: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-      hard: 'text-rose-400 bg-rose-500/10 border-rose-500/30'
+function ProblemDetailPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [currentProblem, setCurrentProblem] = useState(null);
+  const [allProblems, setAllProblems] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('javascript');
+  const [code, setCode] = useState('');
+  const [output, setOutput] = useState(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load all problems and current problem
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [problemsResponse, problemResponse] = await Promise.all([
+          problemsApi.getAllProblems(),
+          id ? problemsApi.getProblemById(id) : null
+        ]);
+
+        const problems = problemsResponse?.problems || [];
+        setAllProblems(problems);
+
+        if (problemResponse) {
+          setCurrentProblem(problemResponse);
+          setCode(problemResponse.starterCode?.[selectedLanguage] || '');
+        } else if (problems.length > 0) {
+          const defaultProblem = problems[0];
+          setCurrentProblem(defaultProblem);
+          setCode(defaultProblem.starterCode?.[selectedLanguage] || '');
+        }
+      } catch (error) {
+        console.error('Error loading problems:', error);
+        toast.error('Failed to load problems');
+      } finally {
+        setLoading(false);
+      }
     };
-    return colors[difficulty?.toLowerCase()] || colors.medium;
+
+    loadData();
+  }, [id, selectedLanguage]);
+
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setSelectedLanguage(newLang);
+    if (currentProblem) {
+      setCode(currentProblem.starterCode?.[newLang] || '');
+    }
+    setOutput(null);
   };
 
-  const getDifficultyDot = (difficulty) => {
-    const colors = {
-      easy: 'bg-emerald-400',
-      medium: 'bg-amber-400',
-      hard: 'bg-rose-400'
-    };
-    return colors[difficulty?.toLowerCase()] || colors.medium;
+  const handleProblemChange = async (newProblemId) => {
+    try {
+      const problemResponse = await problemsApi.getProblemById(newProblemId);
+      setCurrentProblem(problemResponse);
+      setCode(problemResponse.starterCode?.[selectedLanguage] || '');
+      setOutput(null);
+      navigate(`/problem/${newProblemId}`);
+    } catch (error) {
+      console.error('Error loading problem:', error);
+      toast.error('Failed to load problem');
+    }
   };
 
-  return (
-    <div className="h-full flex flex-col bg-base-100">
-      {/* Header with Problem Selector */}
-      <div className="px-6 py-4 border-b border-base-300 bg-base-200/50">
-        <div className="flex items-center gap-3 mb-2">
-          <select
-            value={currentProblemId}
-            onChange={(e) => onProblemChange(e.target.value)}
-            className="select select-bordered select-sm flex-1 bg-base-100 focus:outline-none focus:border-primary"
-          >
-            {allProblems.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
-          
-          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getDifficultyColor(problem.difficulty)}`}>
-            <div className="flex items-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${getDifficultyDot(problem.difficulty)}`} />
-              {problem.difficulty || 'Medium'}
-            </div>
-          </div>
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.2, y: 0.6 },
+    });
+
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.8, y: 0.6 },
+    });
+  };
+
+  const normalizeOutput = (output) => {
+    return output
+      .trim()
+      .split('\n')
+      .map((line) =>
+        line
+          .trim()
+          .replace(/\[\s+/g, '[')
+          .replace(/\s+\]/g, ']')
+          .replace(/\s*,\s*/g, ',')
+      )
+      .filter((line) => line.length > 0)
+      .join('\n');
+  };
+
+  const checkIfTestsPassed = (actualOutput, expectedOutput) => {
+    const normalizedActual = normalizeOutput(actualOutput);
+    const normalizedExpected = normalizeOutput(expectedOutput);
+    return normalizedActual === normalizedExpected;
+  };
+
+  const handleRunCode = async () => {
+    setIsRunning(true);
+    setOutput(null);
+
+    const result = await executeCode(selectedLanguage, code);
+    setOutput(result);
+    setIsRunning(false);
+
+    if (result.success) {
+      const expectedOutput = currentProblem?.expectedOutput?.[selectedLanguage];
+      if (expectedOutput) {
+        const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
+        if (testsPassed) {
+          triggerConfetti();
+          toast.success('All tests passed! Great job!');
+        } else {
+          toast.error('Tests failed. Check your output!');
+        }
+      }
+    } else {
+      toast.error('Code execution failed!');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-base-100 flex items-center justify-center">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    );
+  }
+
+  if (!currentProblem) {
+    return (
+      <div className="h-screen bg-base-100 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Problem not found</h2>
+          <button onClick={() => navigate('/problems')} className="btn btn-primary">
+            Back to Problems
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-        {/* Title */}
-        <h1 className="text-2xl font-bold text-white mb-6 leading-tight">
-          {problem.title}
-        </h1>
+  return (
+    <div className="h-screen bg-base-100 flex flex-col">
+      <Navbar />
 
-        {/* Description */}
-        <div className="prose prose-invert max-w-none mb-8">
-          <div className="text-base text-white/80 leading-relaxed whitespace-pre-wrap">
-            {problem.description}
-          </div>
-        </div>
+      <div className="flex-1">
+        <PanelGroup direction="horizontal">
+          {/* left panel- problem desc */}
+          <Panel defaultSize={40} minSize={30}>
+            <ProblemDescription
+              problem={currentProblem}
+              currentProblemId={currentProblem.id}
+              onProblemChange={handleProblemChange}
+              allProblems={allProblems}
+            />
+          </Panel>
 
-        {/* Examples Section */}
-        {problem.testCases && problem.testCases.length > 0 && (
-          <div className="space-y-6 mb-8">
-            <h2 className="text-lg font-semibold text-white/90 flex items-center gap-2">
-              <div className="w-1 h-5 bg-primary rounded-full" />
-              Examples
-            </h2>
-            
-            {problem.testCases.slice(0, 2).map((testCase, index) => (
-              <div 
-                key={index}
-                className="bg-base-200/50 rounded-lg border border-base-300 overflow-hidden"
-              >
-                <div className="px-4 py-2 bg-base-300/30 border-b border-base-300">
-                  <span className="text-sm font-medium text-white/70">
-                    Example {index + 1}
-                  </span>
-                </div>
-                
-                <div className="p-4 space-y-3">
-                  {/* Input */}
-                  <div>
-                    <div className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1.5">
-                      Input
-                    </div>
-                    <div className="bg-base-300/50 rounded px-3 py-2 font-mono text-sm text-primary border border-base-300">
-                      {Array.isArray(testCase.input) 
-                        ? testCase.input.map(item => 
-                            Array.isArray(item) ? item.join(' ') : item
-                          ).join('\n')
-                        : testCase.input
-                      }
-                    </div>
-                  </div>
+          <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
 
-                  {/* Output */}
-                  <div>
-                    <div className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1.5">
-                      Output
-                    </div>
-                    <div className="bg-base-300/50 rounded px-3 py-2 font-mono text-sm text-emerald-400 border border-base-300">
-                      {testCase.expectedOutput || 'N/A'}
-                    </div>
-                  </div>
+          {/* right panel- code editor & output */}
+          <Panel defaultSize={60} minSize={30}>
+            <PanelGroup direction="vertical">
+              {/* Top panel - Code editor */}
+              <Panel defaultSize={70} minSize={30}>
+                <CodeEditorPanel
+                  selectedLanguage={selectedLanguage}
+                  code={code}
+                  isRunning={isRunning}
+                  onLanguageChange={handleLanguageChange}
+                  onCodeChange={setCode}
+                  onRunCode={handleRunCode}
+                />
+              </Panel>
 
-                  {/* Explanation if available */}
-                  {testCase.explanation && (
-                    <div>
-                      <div className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1.5">
-                        Explanation
-                      </div>
-                      <div className="text-sm text-white/70 leading-relaxed">
-                        {testCase.explanation}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
 
-        {/* Constraints */}
-        {problem.constraints && problem.constraints.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
-              <div className="w-1 h-5 bg-primary rounded-full" />
-              Constraints
-            </h2>
-            <div className="bg-base-200/30 rounded-lg border border-base-300 p-4">
-              <ul className="space-y-2 text-sm text-white/70">
-                {problem.constraints.map((constraint, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    <span className="font-mono">{constraint}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* Tags */}
-        {problem.tags && problem.tags.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white/90 mb-3 flex items-center gap-2">
-              <div className="w-1 h-5 bg-primary rounded-full" />
-              Topics
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {problem.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1.5 bg-base-300/50 text-white/80 rounded-full text-xs font-medium border border-base-300 hover:border-primary transition-colors cursor-pointer"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Input/Output Format (CodeChef style) */}
-        {(problem.inputFormat || problem.outputFormat) && (
-          <div className="space-y-6 mb-8">
-            {problem.inputFormat && (
-              <div>
-                <h2 className="text-lg font-semibold text-white/90 mb-3 flex items-center gap-2">
-                  <div className="w-1 h-5 bg-primary rounded-full" />
-                  Input Format
-                </h2>
-                <div className="bg-base-200/30 rounded-lg border border-base-300 p-4">
-                  <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
-                    {problem.inputFormat}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {problem.outputFormat && (
-              <div>
-                <h2 className="text-lg font-semibold text-white/90 mb-3 flex items-center gap-2">
-                  <div className="w-1 h-5 bg-primary rounded-full" />
-                  Output Format
-                </h2>
-                <div className="bg-base-200/30 rounded-lg border border-base-300 p-4">
-                  <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">
-                    {problem.outputFormat}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Note or Hint */}
-        {problem.hint && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-8">
-            <div className="flex items-start gap-3">
-              <div className="text-primary mt-0.5">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-primary mb-1">Hint</div>
-                <div className="text-sm text-white/70 leading-relaxed">
-                  {problem.hint}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+              {/* Bottom panel - Output Panel*/}
+              <Panel defaultSize={30} minSize={30}>
+                <OutputPanel output={output} />
+              </Panel>
+            </PanelGroup>
+          </Panel>
+        </PanelGroup>
       </div>
     </div>
   );
-};
+}
 
-export default ProblemDescription;
+export default ProblemDetailPage;

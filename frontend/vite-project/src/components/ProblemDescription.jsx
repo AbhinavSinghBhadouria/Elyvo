@@ -19,7 +19,7 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
             value={currentProblemId}
             onChange={(e) => onProblemChange(e.target.value)}
           >
-            {allProblems.map((p) => (
+            {(allProblems || []).map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title} - {p.difficulty}
               </option>
@@ -42,7 +42,7 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
         <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
           <h2 className="text-xl font-bold mb-4 text-base-content">Examples</h2>
           <div className="space-y-4">
-            {problem.examples.map((example, idx) => (
+            {(problem.examples || []).map((example, idx) => (
               <div key={idx}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="badge badge-sm">{idx + 1}</span>
