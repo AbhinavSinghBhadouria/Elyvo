@@ -69,16 +69,29 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
           {problem.title}
         </h1>
 
-        {/* Description */}
+        {/* Description with bold text support */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
             <div className="w-1 h-5 bg-primary rounded-full" />
             Problem Statement
           </h2>
           <div className="bg-base-200/30 rounded-lg border border-base-300 p-4">
-            <p className="text-base text-white/80 leading-relaxed whitespace-pre-wrap">
-              {problem.description}
-            </p>
+            <div className="text-base text-white/80 leading-relaxed space-y-2">
+              {problem.description?.split('\n').map((line, idx) => {
+                // Convert **text** to bold
+                const parts = line.split(/(\*\*.*?\*\*)/g);
+                return (
+                  <p key={idx}>
+                    {parts.map((part, i) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        return <strong key={i}>{part.slice(2, -2)}</strong>;
+                      }
+                      return <span key={i}>{part}</span>;
+                    })}
+                  </p>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -112,8 +125,8 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
                         Input
                       </div>
                     </div>
-                    <div className="bg-base-300/50 rounded px-3 py-2.5 font-mono text-sm text-primary border border-base-300">
-                      {example.input}
+                    <div className="bg-base-300/50 rounded px-3 py-2.5 font-mono text-sm text-primary border border-base-300 whitespace-pre-wrap">
+                      {example.input || 'No input provided'}
                     </div>
                   </div>
 
@@ -124,8 +137,8 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
                         Output
                       </div>
                     </div>
-                    <div className="bg-base-300/50 rounded px-3 py-2.5 font-mono text-sm text-emerald-400 border border-base-300">
-                      {example.output}
+                    <div className="bg-base-300/50 rounded px-3 py-2.5 font-mono text-sm text-emerald-400 border border-base-300 whitespace-pre-wrap">
+                      {example.output || 'No output provided'}
                     </div>
                   </div>
 
