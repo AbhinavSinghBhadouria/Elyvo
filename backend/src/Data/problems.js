@@ -1,4 +1,4 @@
-// enhanced_problems.js
+// problems.js
 export const PROBLEMS = [
   // 1. Two Sum
   {

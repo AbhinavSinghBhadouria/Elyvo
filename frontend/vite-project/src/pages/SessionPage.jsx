@@ -5,7 +5,7 @@ import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEndSession, useJoinSession, useSessionById } from "../hooks/useSessions";
-import { enhancedProblems } from "../data/problems";
+import { PROBLEMS } from "../data/problems";
 import Navbar from "../components/Navbar";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { getDifficultyBadgeClass } from "../lib/utils";
@@ -42,7 +42,7 @@ function SessionPage() {
 
   // find the problem data based on session problem title
   const problemData = session?.problem
-    ? enhancedProblems.find((p) => p.title === session.problem)
+    ? PROBLEMS.find((p) => p.title === session.problem)
     : null;
 
 

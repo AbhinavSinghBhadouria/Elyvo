@@ -1,5 +1,5 @@
 import { Code2Icon, LoaderIcon, PlusIcon } from "lucide-react";
-import { enhancedProblems } from "../data/problems";
+import { PROBLEMS } from "../data/problems";
 
 function CreateSessionModal({
   isOpen,
@@ -9,7 +9,7 @@ function CreateSessionModal({
   onCreateRoom,
   isCreating,
 }) {
-  const problems = enhancedProblems;
+  const problems = PROBLEMS;
 
   if (!isOpen) return null;
 
