@@ -42,7 +42,7 @@ function SessionPage() {
 
   // find the problem data based on session problem title
   const problemData = session?.problem
-    ? Object.values(PROBLEMS).find((p) => p.title === session.problem)
+    ? PROBLEMS.find((p) => p.title === session.problem)
     : null;
 
 

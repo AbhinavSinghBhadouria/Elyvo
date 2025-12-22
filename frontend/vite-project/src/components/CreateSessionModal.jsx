@@ -9,7 +9,7 @@ function CreateSessionModal({
   onCreateRoom,
   isCreating,
 }) {
-  const problems = Object.values(PROBLEMS);
+  const problems = PROBLEMS;
 
   if (!isOpen) return null;
 

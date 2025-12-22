@@ -18,8 +18,8 @@ if (!DB_URL) {
 }
 
 // Import your problems - ADJUSTED PATH for backend/src/Data/problems.js
-import { enhancedProblems } from './src/Data/problems.js';
-const problems = enhancedProblems;
+import { PROBLEMS } from './src/Data/problems.js';
+const problems = PROBLEMS;
 
 /**
  * Transform problem data to match database schema

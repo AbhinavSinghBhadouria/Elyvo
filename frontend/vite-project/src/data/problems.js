@@ -1,5 +1,5 @@
 // enhanced_problems.js
-export const enhancedProblems = [
+export const PROBLEMS = [
   // 1. Two Sum
   {
     id: "two-sum",
