@@ -33,28 +33,75 @@ using namespace std;
 };
 
 /**
+ * Intelligently wraps Java code to ensure it's executable
+ * @param {string} code - user's Java code
+ * @returns {string} - properly structured Java code
+ */
+function wrapJavaCode(code) {
+    const trimmedCode = code.trim();
+    
+    // Check if imports already exist
+    const hasImports = /^\s*import\s+/m.test(trimmedCode);
+    
+    // Check if it has a public Main class
+    const hasPublicMainClass = /public\s+class\s+Main/m.test(trimmedCode);
+    
+    // Check if it has main method
+    const hasMainMethod = /public\s+static\s+void\s+main\s*\(\s*String\s*\[\s*\]\s*\w+\s*\)/m.test(trimmedCode);
+    
+    let wrappedCode = '';
+    
+    // Add imports if missing
+    if (!hasImports) {
+        wrappedCode = AUTO_IMPORTS.java;
+    }
+    
+    // If it already has public Main class with main method, return as is
+    if (hasPublicMainClass && hasMainMethod) {
+        return wrappedCode + trimmedCode;
+    }
+    
+    // If it has main method but not in public Main class
+    if (hasMainMethod && !hasPublicMainClass) {
+        // Try to fix by replacing class name with Main
+        const fixedCode = trimmedCode.replace(
+            /(class\s+)(Main|Solution)(\s*\{)/,
+            'public class Main$3'
+        );
+        return wrappedCode + fixedCode;
+    }
+    
+    // No main method - this is just a class/method definition
+    // We need to wrap it
+    wrappedCode += trimmedCode + '\n\n';
+    wrappedCode += `public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // Your code runs here
+        sc.close();
+    }
+}
+`;
+    
+    return wrappedCode;
+}
+
+/**
  * Intelligently wraps code with necessary imports if missing
  * @param {string} language - programming language
  * @param {string} code - user's source code
- * @returns {string} - wrapped code with imports
+ * @returns {string} - wrapped code with imports and proper structure
  */
 function wrapCodeWithImports(language, code) {
     const trimmedCode = code.trim();
     
     if (language === 'java') {
-        // Check if imports already exist
-        const hasImports = trimmedCode.match(/^\s*import\s+/m);
-        
-        if (!hasImports) {
-            // Add imports at the beginning
-            return AUTO_IMPORTS.java + trimmedCode;
-        }
-        return code;
+        return wrapJavaCode(trimmedCode);
     }
     
     if (language === 'cpp') {
         // Check if includes already exist
-        const hasIncludes = trimmedCode.match(/^\s*#include\s+/m);
+        const hasIncludes = /^\s*#include\s+/m.test(trimmedCode);
         
         if (!hasIncludes) {
             return AUTO_IMPORTS.cpp + trimmedCode;
@@ -86,6 +133,7 @@ export async function executeCode(language, code, stdin = "") {
         const wrappedCode = wrapCodeWithImports(language, code);
 
         console.log(`Executing ${language} code with input:`, stdin);
+        // Uncomment to debug: console.log('Wrapped code:', wrappedCode);
 
         const response = await fetch(`${PISTON_API}/execute`, {
             method: "POST",
@@ -97,7 +145,7 @@ export async function executeCode(language, code, stdin = "") {
                 version: languageConfig.version,
                 files: [
                     {
-                        content: wrappedCode // Use wrapped code here
+                        content: wrappedCode
                     },
                 ],
                 stdin: stdin,
