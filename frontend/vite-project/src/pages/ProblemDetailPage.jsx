@@ -10,7 +10,7 @@ import { executeCode } from '../lib/piston';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 
-// CodeForces/CodeChef style starter templates
+// OPTION 1: Minimal starter code (just boilerplate, no hints)
 const STARTER_CODE_TEMPLATES = {
   javascript: `const readline = require('readline');
 const rl = readline.createInterface({
@@ -22,43 +22,20 @@ let input = [];
 rl.on('line', (line) => {
     input.push(line);
 }).on('close', () => {
-    // Parse input
-    const n = parseInt(input[0]);
-    
-    // Your solution here
-    
-    // Print output
-    console.log(result);
+    // Write your code here
 });
 `,
 
-  python: `import sys
-input = sys.stdin.read
-data = input().split()
-
-# Parse input
-n = int(data[0])
-
-# Your solution here
-
-# Print output
-print(result)
+  python: `# Write your code here
 `,
 
   java: `import java.util.*;
-import java.io.*;
 
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         
-        // Read input
-        int n = sc.nextInt();
-        
-        // Your solution here
-        
-        // Print output
-        System.out.println(result);
+        // Write your code here
         
         sc.close();
     }
@@ -66,48 +43,35 @@ public class Main {
 `,
 
   cpp: `#include <iostream>
-#include <vector>
-#include <algorithm>
-#include <map>
-#include <set>
-#include <string>
 using namespace std;
 
 int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-    
-    // Read input
-    int n;
-    cin >> n;
-    
-    // Your solution here
-    
-    // Print output
-    cout << result << endl;
+    // Write your code here
     
     return 0;
 }
 `,
 
   c: `#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 int main() {
-    // Read input
-    int n;
-    scanf("%d", &n);
-    
-    // Your solution here
-    
-    // Print output
-    printf("%d\\n", result);
+    // Write your code here
     
     return 0;
 }
 `
 };
+
+// OPTION 2: Completely blank (uncomment to use)
+/*
+const STARTER_CODE_TEMPLATES = {
+  javascript: '',
+  python: '',
+  java: '',
+  cpp: '',
+  c: ''
+};
+*/
 
 function ProblemDetailPage() {
   const { id } = useParams();
