@@ -10,10 +10,9 @@ import { executeCode } from '../lib/piston';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 
-// Starter code templates with all necessary imports
+// CodeForces/CodeChef style starter templates
 const STARTER_CODE_TEMPLATES = {
-  javascript: `// Write your code here
-const readline = require('readline');
+  javascript: `const readline = require('readline');
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -23,19 +22,27 @@ let input = [];
 rl.on('line', (line) => {
     input.push(line);
 }).on('close', () => {
+    // Parse input
+    const n = parseInt(input[0]);
+    
     // Your solution here
+    
+    // Print output
+    console.log(result);
 });
 `,
 
-  python: `# Write your code here
-import sys
+  python: `import sys
+input = sys.stdin.read
+data = input().split()
 
-def solve():
-    # Your solution here
-    pass
+# Parse input
+n = int(data[0])
 
-if __name__ == "__main__":
-    solve()
+# Your solution here
+
+# Print output
+print(result)
 `,
 
   java: `import java.util.*;
@@ -45,7 +52,13 @@ public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         
-        // Write your code here
+        // Read input
+        int n = sc.nextInt();
+        
+        // Your solution here
+        
+        // Print output
+        System.out.println(result);
         
         sc.close();
     }
@@ -54,16 +67,24 @@ public class Main {
 
   cpp: `#include <iostream>
 #include <vector>
-#include <string>
 #include <algorithm>
 #include <map>
 #include <set>
-#include <queue>
-#include <stack>
+#include <string>
 using namespace std;
 
 int main() {
-    // Write your code here
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    
+    // Read input
+    int n;
+    cin >> n;
+    
+    // Your solution here
+    
+    // Print output
+    cout << result << endl;
     
     return 0;
 }
@@ -74,7 +95,14 @@ int main() {
 #include <string.h>
 
 int main() {
-    // Write your code here
+    // Read input
+    int n;
+    scanf("%d", &n);
+    
+    // Your solution here
+    
+    // Print output
+    printf("%d\\n", result);
     
     return 0;
 }
@@ -165,13 +193,7 @@ function ProblemDetailPage() {
     return output
       .trim()
       .split('\n')
-      .map((line) =>
-        line
-          .trim()
-          .replace(/\[\s+/g, '[')
-          .replace(/\s+\]/g, ']')
-          .replace(/\s*,\s*/g, ',')
-      )
+      .map((line) => line.trim())
       .filter((line) => line.length > 0)
       .join('\n');
   };
@@ -182,27 +204,65 @@ function ProblemDetailPage() {
     return normalizedActual === normalizedExpected;
   };
 
+  /**
+   * Format test case input for standard input
+   * Handles arrays and converts them to space/newline separated format
+   */
+  const formatInputForStdin = (testInput) => {
+    if (typeof testInput === 'string') {
+      return testInput;
+    }
+    
+    if (Array.isArray(testInput)) {
+      return testInput.map(item => {
+        if (Array.isArray(item)) {
+          return item.join(' ');
+        }
+        return String(item);
+      }).join('\n');
+    }
+    
+    return String(testInput);
+  };
+
   const handleRunCode = async () => {
+    if (!currentProblem?.testCases || currentProblem.testCases.length === 0) {
+      toast.error('No test cases available for this problem');
+      return;
+    }
+
     setIsRunning(true);
     setOutput(null);
 
-    const result = await executeCode(selectedLanguage, code);
+    // Get the first test case
+    const testCase = currentProblem.testCases[0];
+    const stdin = formatInputForStdin(testCase.input);
+
+    console.log('Running with stdin:', stdin);
+    console.log('Expected output:', testCase.expectedOutput);
+
+    const result = await executeCode(selectedLanguage, code, stdin);
     setOutput(result);
     setIsRunning(false);
 
     if (result.success) {
-      const expectedOutput = currentProblem?.expectedOutput?.[selectedLanguage];
+      // Check if output matches expected
+      const expectedOutput = testCase.expectedOutput;
       if (expectedOutput) {
         const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
         if (testsPassed) {
           triggerConfetti();
-          toast.success('All tests passed! Great job!');
+          toast.success('Test case passed! ✓');
         } else {
-          toast.error('Tests failed. Check your output!');
+          toast.error('Wrong Answer ✗');
+          console.log('Expected:', normalizeOutput(expectedOutput));
+          console.log('Got:', normalizeOutput(result.output));
         }
+      } else {
+        toast.success('Code executed successfully!');
       }
     } else {
-      toast.error('Code execution failed!');
+      toast.error('Compilation Error or Runtime Error');
     }
   };
 
@@ -233,7 +293,7 @@ function ProblemDetailPage() {
 
       <div className="flex-1">
         <PanelGroup direction="horizontal">
-          {/* left panel- problem desc */}
+          {/* left panel - problem desc */}
           <Panel defaultSize={40} minSize={30}>
             <ProblemDescription
               problem={currentProblem}
@@ -245,7 +305,7 @@ function ProblemDetailPage() {
 
           <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
 
-          {/* right panel- code editor & output */}
+          {/* right panel - code editor & output */}
           <Panel defaultSize={60} minSize={30}>
             <PanelGroup direction="vertical">
               {/* Top panel - Code editor */}
@@ -262,7 +322,7 @@ function ProblemDetailPage() {
 
               <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
 
-              {/* Bottom panel - Output Panel*/}
+              {/* Bottom panel - Output Panel */}
               <Panel defaultSize={30} minSize={30}>
                 <OutputPanel output={output} />
               </Panel>
