@@ -5032,3 +5032,30 @@ int main(void) {
     }
   },
 ];
+
+export const LANGUAGE_CONFIG = {
+  javascript: {
+    id: "javascript",
+    label: "JavaScript",
+    monacoLanguage: "javascript",
+    defaultCode: "// Write your code here\n"
+  },
+  python: {
+    id: "python",
+    label: "Python",
+    monacoLanguage: "python",
+    defaultCode: "# Write your code here\n"
+  },
+  java: {
+    id: "java",
+    label: "Java",
+    monacoLanguage: "java",
+    defaultCode: "// Write your code here\n"
+  },
+  cpp: {
+    id: "cpp",
+    label: "C++",
+    monacoLanguage: "cpp",
+    defaultCode: "// Write your code here\n"
+  }
+};
