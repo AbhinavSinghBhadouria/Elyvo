@@ -94,11 +94,11 @@ function ProblemDetailPage() {
 
         if (problemResponse) {
           setCurrentProblem(problemResponse);
-          setCode(STARTER_CODE_TEMPLATES[selectedLanguage]);
+          setCode(problemResponse.starterCode?.[selectedLanguage] || '');
         } else if (problems.length > 0) {
           const defaultProblem = problems[0];
           setCurrentProblem(defaultProblem);
-          setCode(STARTER_CODE_TEMPLATES[selectedLanguage]);
+          setCode(defaultProblem.starterCode?.[selectedLanguage] || '');
         }
       } catch (error) {
         console.error('Error loading problems:', error);
@@ -113,7 +113,9 @@ function ProblemDetailPage() {
 
   const handleLanguageChange = (lang) => {
     setSelectedLanguage(lang);
-    setCode(STARTER_CODE_TEMPLATES[lang]);
+    if (currentProblem) {
+      setCode(currentProblem.starterCode?.[newLang] || '');
+    }
     setOutput(null);
   };
 
@@ -121,7 +123,7 @@ function ProblemDetailPage() {
     try {
       const problemResponse = await problemsApi.getProblemById(newProblemId);
       setCurrentProblem(problemResponse);
-      setCode(STARTER_CODE_TEMPLATES[selectedLanguage]);
+      setCode(problemResponse.starterCode?.[selectedLanguage] || '');
       setOutput(null);
       navigate(`/problem/${newProblemId}`);
     } catch (error) {
