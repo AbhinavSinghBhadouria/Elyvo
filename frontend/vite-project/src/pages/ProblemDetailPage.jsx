@@ -94,11 +94,16 @@ function ProblemDetailPage() {
 
         if (problemResponse) {
           setCurrentProblem(problemResponse);
+          // ALWAYS use simple comment templates, ignore backend starterCode
           setCode(STARTER_CODE_TEMPLATES[selectedLanguage]);
+          console.log('✅ Loaded problem:', problemResponse.title);
+          console.log('📝 Using simple template for', selectedLanguage);
         } else if (problems.length > 0) {
           const defaultProblem = problems[0];
           setCurrentProblem(defaultProblem);
+          // ALWAYS use simple comment templates, ignore backend starterCode
           setCode(STARTER_CODE_TEMPLATES[selectedLanguage]);
+          console.log('✅ Loaded default problem:', defaultProblem.title);
         }
       } catch (error) {
         console.error('Error loading problems:', error);
@@ -121,9 +126,11 @@ function ProblemDetailPage() {
     try {
       const problemResponse = await problemsApi.getProblemById(newProblemId);
       setCurrentProblem(problemResponse);
+      // ALWAYS use simple comment templates, ignore backend starterCode
       setCode(STARTER_CODE_TEMPLATES[selectedLanguage]);
       setOutput(null);
       navigate(`/problem/${newProblemId}`);
+      console.log('✅ Changed to problem:', problemResponse.title);
     } catch (error) {
       console.error('Error loading problem:', error);
       toast.error('Failed to load problem');
