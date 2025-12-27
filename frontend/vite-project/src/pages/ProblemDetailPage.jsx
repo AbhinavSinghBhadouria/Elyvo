@@ -90,17 +90,11 @@ function ProblemDetailPage() {
 
         if (problemResponse) {
           setCurrentProblem(problemResponse);
-          const starterCode = problemResponse.starterCode?.[selectedLanguage] || 
-                             STARTER_CODE_TEMPLATES[selectedLanguage] || 
-                             '// Write your code here\n';
-          setCode(starterCode);
+          setCode(problemResponse.starterCode?.[selectedLanguage] || '');
         } else if (problems.length > 0) {
           const defaultProblem = problems[0];
           setCurrentProblem(defaultProblem);
-          const starterCode = defaultProblem.starterCode?.[selectedLanguage] || 
-                             STARTER_CODE_TEMPLATES[selectedLanguage] || 
-                             '// Write your code here\n';
-          setCode(starterCode);
+          setCode(defaultProblem.starterCode?.[selectedLanguage] || '');
         }
       } catch (error) {
         console.error('Error loading problems:', error);
@@ -116,10 +110,7 @@ function ProblemDetailPage() {
   const handleLanguageChange = (lang) => {
     setSelectedLanguage(lang);
     if (currentProblem) {
-      const starterCode = currentProblem.starterCode?.[lang] || 
-                         STARTER_CODE_TEMPLATES[lang] || 
-                         '// Write your code here\n';
-      setCode(starterCode);
+      setCode(currentProblem.starterCode?.[newLang] || '');
     }
     setOutput(null);
   };
@@ -128,10 +119,7 @@ function ProblemDetailPage() {
     try {
       const problemResponse = await problemsApi.getProblemById(newProblemId);
       setCurrentProblem(problemResponse);
-      const starterCode = problemResponse.starterCode?.[selectedLanguage] || 
-                         STARTER_CODE_TEMPLATES[selectedLanguage] || 
-                         '// Write your code here\n';
-      setCode(starterCode);
+      setCode(problemResponse.starterCode?.[selectedLanguage] || '');
       setOutput(null);
       navigate(`/problem/${newProblemId}`);
     } catch (error) {
