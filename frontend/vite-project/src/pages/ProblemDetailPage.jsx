@@ -126,6 +126,7 @@ function ProblemDetailPage() {
       setCode(problemResponse.starterCode?.[selectedLanguage] || '');
       setOutput(null);
       navigate(`/problem/${newProblemId}`);
+      console.log('✅ Changed to problem:', problemResponse.title);
     } catch (error) {
       console.error('Error loading problem:', error);
       toast.error('Failed to load problem');

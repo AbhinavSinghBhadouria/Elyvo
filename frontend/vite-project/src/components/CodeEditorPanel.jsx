@@ -1,6 +1,6 @@
 import React from 'react';
 import Editor from "@monaco-editor/react";
-import { Play, Loader2, RotateCcw, Maximize2 } from "lucide-react";
+import { Play, Loader2, RotateCcw, Trash2 } from "lucide-react";
 
 // Language configuration matching the main page
 const LANGUAGE_CONFIG = {
@@ -54,8 +54,14 @@ function CodeEditorPanel({
   const currentConfig = LANGUAGE_CONFIG[selectedLanguage];
 
   const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset the code? This will clear all your work.')) {
+    if (window.confirm('Reset to language comment? This will clear all your code.')) {
       onCodeChange(STARTER_CODE_TEMPLATES[selectedLanguage]);
+    }
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm('Clear all code? This cannot be undone.')) {
+      onCodeChange('');
     }
   };
 
@@ -85,9 +91,18 @@ function CodeEditorPanel({
 
         <div className="flex items-center gap-2">
           <button
+            onClick={handleClearAll}
+            className="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-warning"
+            title="Clear all code"
+          >
+            <Trash2 className="w-4 h-4" />
+            Clear
+          </button>
+
+          <button
             onClick={handleReset}
-            className="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-error"
-            title="Reset code"
+            className="btn btn-ghost btn-sm gap-2 text-base-content/70 hover:text-info"
+            title="Reset to language comment"
           >
             <RotateCcw className="w-4 h-4" />
             Reset
