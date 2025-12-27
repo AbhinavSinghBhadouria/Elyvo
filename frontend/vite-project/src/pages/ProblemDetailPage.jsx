@@ -18,7 +18,8 @@ const LANGUAGE_CONFIG = {
     bgColor: 'bg-yellow-50',
     textColor: 'text-yellow-800',
     borderColor: 'border-yellow-400',
-    hoverBg: 'hover:bg-yellow-100'
+    hoverBg: 'hover:bg-yellow-100',
+    comment: '// Write your JavaScript code here'
   },
   python: {
     name: 'Python',
@@ -26,7 +27,8 @@ const LANGUAGE_CONFIG = {
     bgColor: 'bg-blue-50',
     textColor: 'text-blue-800',
     borderColor: 'border-blue-400',
-    hoverBg: 'hover:bg-blue-100'
+    hoverBg: 'hover:bg-blue-100',
+    comment: '# Write your Python code here'
   },
   java: {
     name: 'Java',
@@ -34,7 +36,8 @@ const LANGUAGE_CONFIG = {
     bgColor: 'bg-red-50',
     textColor: 'text-red-800',
     borderColor: 'border-red-400',
-    hoverBg: 'hover:bg-red-100'
+    hoverBg: 'hover:bg-red-100',
+    comment: '// Write your Java code here'
   },
   cpp: {
     name: 'C++',
@@ -42,7 +45,8 @@ const LANGUAGE_CONFIG = {
     bgColor: 'bg-indigo-50',
     textColor: 'text-indigo-800',
     borderColor: 'border-indigo-400',
-    hoverBg: 'hover:bg-indigo-100'
+    hoverBg: 'hover:bg-indigo-100',
+    comment: '// Write your C++ code here'
   },
   c: {
     name: 'C',
@@ -50,17 +54,18 @@ const LANGUAGE_CONFIG = {
     bgColor: 'bg-gray-50',
     textColor: 'text-gray-800',
     borderColor: 'border-gray-400',
-    hoverBg: 'hover:bg-gray-100'
+    hoverBg: 'hover:bg-gray-100',
+    comment: '// Write your C code here'
   }
 };
 
-// Empty starter code - users write complete solutions
+// Simple language-specific comments only
 const STARTER_CODE_TEMPLATES = {
-  javascript: '',
-  python: '',
-  java: '',
-  cpp: '',
-  c: ''
+  javascript: '// Write your JavaScript code here\n',
+  python: '# Write your Python code here\n',
+  java: '// Write your Java code here\n',
+  cpp: '// Write your C++ code here\n',
+  c: '// Write your C code here\n'
 };
 
 function ProblemDetailPage() {
@@ -75,7 +80,6 @@ function ProblemDetailPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load all problems and current problem
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -129,17 +133,32 @@ function ProblemDetailPage() {
   };
 
   const triggerConfetti = () => {
-    confetti({
-      particleCount: 80,
-      spread: 250,
-      origin: { x: 0.2, y: 0.6 },
-    });
+    const duration = 3000;
+    const end = Date.now() + duration;
 
-    confetti({
-      particleCount: 80,
-      spread: 250,
-      origin: { x: 0.8, y: 0.6 },
-    });
+    const frame = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.6 },
+        colors: ['#22c55e', '#3b82f6', '#f59e0b']
+      });
+      
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.6 },
+        colors: ['#22c55e', '#3b82f6', '#f59e0b']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+    
+    frame();
   };
 
   const normalizeOutput = (output) => {
@@ -186,9 +205,6 @@ function ProblemDetailPage() {
     const testCase = currentProblem.testCases[0];
     const stdin = formatInputForStdin(testCase.input);
 
-    console.log('Running with stdin:', stdin);
-    console.log('Expected output:', testCase.expectedOutput);
-
     const result = await executeCode(selectedLanguage, code, stdin);
     setOutput(result);
     setIsRunning(false);
@@ -199,24 +215,35 @@ function ProblemDetailPage() {
         const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
         if (testsPassed) {
           triggerConfetti();
-          toast.success('Test case passed! ✓');
+          toast.success('🎉 Test case passed!', {
+            duration: 4000,
+            style: {
+              background: '#10b981',
+              color: '#fff',
+            }
+          });
         } else {
-          toast.error('Wrong Answer ✗');
-          console.log('Expected:', normalizeOutput(expectedOutput));
-          console.log('Got:', normalizeOutput(result.output));
+          toast.error('Wrong Answer - Check the expected output', {
+            duration: 4000
+          });
         }
       } else {
         toast.success('Code executed successfully!');
       }
     } else {
-      toast.error('Compilation Error or Runtime Error');
+      toast.error(result.error || 'Compilation Error or Runtime Error', {
+        duration: 5000
+      });
     }
   };
 
   if (loading) {
     return (
       <div className="h-screen bg-base-100 flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="loading loading-spinner loading-lg text-primary"></div>
+          <p className="text-lg font-medium">Loading problem...</p>
+        </div>
       </div>
     );
   }
@@ -225,6 +252,7 @@ function ProblemDetailPage() {
     return (
       <div className="h-screen bg-base-100 flex items-center justify-center">
         <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
           <h2 className="text-2xl font-bold mb-4">Problem not found</h2>
           <button onClick={() => navigate('/problems')} className="btn btn-primary">
             Back to Problems
@@ -239,11 +267,11 @@ function ProblemDetailPage() {
       <Navbar />
 
       {/* Enhanced Language Selector Toolbar */}
-      <div className="bg-base-200 border-b border-base-300 px-6 py-3 shadow-sm">
+      <div className="bg-base-200 border-b-2 border-base-300 px-6 py-3.5 shadow-sm">
         <div className="flex items-center justify-between max-w-full">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-semibold text-base-content/70 uppercase tracking-wide">
-              Select Language:
+            <span className="text-sm font-bold text-base-content uppercase tracking-wider">
+              Select Language
             </span>
             <div className="flex gap-2 flex-wrap">
               {Object.entries(LANGUAGE_CONFIG).map(([lang, config]) => (
@@ -252,12 +280,13 @@ function ProblemDetailPage() {
                   onClick={() => handleLanguageChange(lang)}
                   className={`
                     flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-200
-                    border-2 font-medium text-sm
+                    border-2 font-semibold text-sm
                     ${selectedLanguage === lang 
-                      ? `${config.bgColor} ${config.textColor} ${config.borderColor} shadow-md scale-105` 
-                      : `bg-base-100 border-base-300 text-base-content/80 ${config.hoverBg} hover:border-base-400 hover:shadow`
+                      ? `${config.bgColor} ${config.textColor} ${config.borderColor} shadow-lg scale-105 ring-2 ring-offset-2 ring-offset-base-200` 
+                      : `bg-base-100 border-base-300 text-base-content/70 ${config.hoverBg} hover:border-base-400 hover:shadow-md hover:scale-102`
                     }
                   `}
+                  title={`Switch to ${config.name}`}
                 >
                   <img 
                     src={config.logo} 
@@ -269,7 +298,9 @@ function ProblemDetailPage() {
                   />
                   <span>{config.name}</span>
                   {selectedLanguage === lang && (
-                    <span className="ml-1">✓</span>
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
                   )}
                 </button>
               ))}
@@ -278,9 +309,9 @@ function ProblemDetailPage() {
         </div>
       </div>
 
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         <PanelGroup direction="horizontal">
-          {/* left panel - problem desc */}
+          {/* Left panel - Problem Description */}
           <Panel defaultSize={40} minSize={30}>
             <ProblemDescription
               problem={currentProblem}
@@ -292,10 +323,10 @@ function ProblemDetailPage() {
 
           <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
 
-          {/* right panel - code editor & output */}
+          {/* Right panel - Code Editor & Output */}
           <Panel defaultSize={60} minSize={30}>
             <PanelGroup direction="vertical">
-              {/* Top panel - Code editor */}
+              {/* Top panel - Code Editor */}
               <Panel defaultSize={70} minSize={30}>
                 <CodeEditorPanel
                   selectedLanguage={selectedLanguage}
@@ -309,8 +340,8 @@ function ProblemDetailPage() {
 
               <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
 
-              {/* Bottom panel - Output Panel */}
-              <Panel defaultSize={30} minSize={30}>
+              {/* Bottom panel - Output */}
+              <Panel defaultSize={30} minSize={20}>
                 <OutputPanel output={output} />
               </Panel>
             </PanelGroup>

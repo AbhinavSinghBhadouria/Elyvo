@@ -1,16 +1,24 @@
 import React from 'react';
+import { CheckCircle, XCircle, AlertCircle, Terminal, FileText } from 'lucide-react';
 
 function OutputPanel({ output }) {
   if (!output) {
     return (
       <div className="h-full bg-base-100 flex flex-col">
-        <div className="px-4 py-2 bg-base-200 border-b border-base-300 font-semibold text-sm">
-          Output
+        <div className="px-5 py-3 bg-base-200 border-b-2 border-base-300 flex items-center gap-2">
+          <Terminal className="w-4 h-4 text-base-content/70" />
+          <span className="font-bold text-sm">Output</span>
         </div>
-        <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
-          <p className="text-base-content/50 text-sm text-center">
-            Click "Run Code" to see the output here...
-          </p>
+        <div className="flex-1 overflow-auto p-6 flex items-center justify-center">
+          <div className="text-center">
+            <Terminal className="w-16 h-16 mx-auto mb-4 text-base-content/20" />
+            <p className="text-base-content/50 text-sm font-medium mb-2">
+              No output yet
+            </p>
+            <p className="text-base-content/40 text-xs">
+              Click "Run Code" to see the results
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -18,63 +26,75 @@ function OutputPanel({ output }) {
 
   return (
     <div className="h-full bg-base-100 flex flex-col">
-      {/* Header */}
-      <div className="px-4 py-2 bg-base-200 border-b border-base-300 flex items-center justify-between">
-        <span className="font-semibold text-sm">Output</span>
+      {/* Enhanced Header */}
+      <div className="px-5 py-3 bg-base-200 border-b-2 border-base-300 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2">
+          <Terminal className="w-4 h-4 text-base-content/70" />
+          <span className="font-bold text-sm">Output</span>
+        </div>
+        
         {output.success ? (
-          <span className="px-2 py-0.5 bg-success/20 text-success text-xs rounded-full font-medium">
-            ✓ Success
-          </span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-success/20 text-success rounded-lg border border-success/30">
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wide">Success</span>
+          </div>
         ) : (
-          <span className="px-2 py-0.5 bg-error/20 text-error text-xs rounded-full font-medium">
-            ✗ Error
-          </span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-error/20 text-error rounded-lg border border-error/30">
+            <XCircle className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wide">Error</span>
+          </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-5">
         {output.success ? (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Test Results Summary */}
             {output.testResults && output.testResults.length > 0 && (
               <div>
-                <div className="text-xs font-semibold text-base-content/70 uppercase tracking-wide mb-2">
-                  Test Results
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-4 h-4 text-base-content/70" />
+                  <span className="text-xs font-bold text-base-content/70 uppercase tracking-wide">
+                    Test Results
+                  </span>
                 </div>
+                
                 <div className="space-y-2 mb-4">
                   {output.testResults.map((result, idx) => (
                     <div 
                       key={idx}
-                      className={`flex items-center justify-between p-2 rounded border text-sm ${
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
                         result.passed 
-                          ? 'bg-success/10 border-success/30 text-success' 
-                          : 'bg-error/10 border-error/30 text-error'
+                          ? 'bg-success/10 border-success/40 shadow-sm' 
+                          : 'bg-error/10 border-error/40 shadow-sm'
                       }`}
                     >
-                      <span className="font-medium">Test Case {result.testCase}</span>
-                      <span className="flex items-center gap-1">
+                      <span className="font-semibold text-sm">Test Case {result.testCase}</span>
+                      <div className="flex items-center gap-2">
                         {result.passed ? (
                           <>
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            Passed
+                            <CheckCircle className="w-5 h-5 text-success" />
+                            <span className="text-success font-bold text-sm">Passed</span>
                           </>
                         ) : (
                           <>
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                            Failed
+                            <XCircle className="w-5 h-5 text-error" />
+                            <span className="text-error font-bold text-sm">Failed</span>
                           </>
                         )}
-                      </span>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <div className="text-sm text-base-content/70 font-medium">
-                  Passed: {output.testResults.filter(r => r.passed).length} / {output.testResults.length}
+                
+                <div className="bg-base-200/50 rounded-lg p-3 border border-base-300">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-base-content/70">Total Score:</span>
+                    <span className="text-lg font-bold text-success">
+                      {output.testResults.filter(r => r.passed).length} / {output.testResults.length}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -82,11 +102,14 @@ function OutputPanel({ output }) {
             {/* Program Output */}
             {output.output && (
               <div>
-                <div className="text-xs font-semibold text-base-content/70 uppercase tracking-wide mb-2">
-                  Program Output
+                <div className="flex items-center gap-2 mb-3">
+                  <Terminal className="w-4 h-4 text-base-content/70" />
+                  <span className="text-xs font-bold text-base-content/70 uppercase tracking-wide">
+                    Program Output
+                  </span>
                 </div>
-                <div className="bg-base-200 rounded p-3 border border-base-300">
-                  <pre className="text-sm font-mono text-success whitespace-pre-wrap break-words">
+                <div className="bg-neutral rounded-lg p-4 border-2 border-success/30 shadow-inner">
+                  <pre className="text-sm font-mono text-success whitespace-pre-wrap break-words leading-relaxed">
                     {output.output}
                   </pre>
                 </div>
@@ -96,26 +119,49 @@ function OutputPanel({ output }) {
             {/* Expected Output */}
             {output.expectedOutput && (
               <div>
-                <div className="text-xs font-semibold text-base-content/70 uppercase tracking-wide mb-2">
-                  Expected Output
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-4 h-4 text-base-content/70" />
+                  <span className="text-xs font-bold text-base-content/70 uppercase tracking-wide">
+                    Expected Output
+                  </span>
                 </div>
-                <div className="bg-base-200 rounded p-3 border border-base-300">
-                  <pre className="text-sm font-mono text-info whitespace-pre-wrap break-words">
+                <div className="bg-neutral rounded-lg p-4 border-2 border-info/30 shadow-inner">
+                  <pre className="text-sm font-mono text-info whitespace-pre-wrap break-words leading-relaxed">
                     {output.expectedOutput}
                   </pre>
                 </div>
               </div>
             )}
+
+            {/* Success Message */}
+            {!output.testResults && !output.expectedOutput && (
+              <div className="bg-success/10 border-2 border-success/30 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-sm font-bold text-success mb-1">
+                      Execution Successful!
+                    </div>
+                    <div className="text-sm text-base-content/70">
+                      Your code ran without any errors.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Error Message */}
             <div>
-              <div className="text-xs font-semibold text-error/70 uppercase tracking-wide mb-2">
-                Error
+              <div className="flex items-center gap-2 mb-3">
+                <XCircle className="w-4 h-4 text-error" />
+                <span className="text-xs font-bold text-error uppercase tracking-wide">
+                  Error Details
+                </span>
               </div>
-              <div className="bg-error/10 rounded p-3 border border-error/30">
-                <pre className="text-sm font-mono text-error whitespace-pre-wrap break-words">
+              <div className="bg-error/10 rounded-lg p-4 border-2 border-error/40 shadow-inner">
+                <pre className="text-sm font-mono text-error whitespace-pre-wrap break-words leading-relaxed">
                   {output.error || 'An unknown error occurred'}
                 </pre>
               </div>
@@ -124,16 +170,37 @@ function OutputPanel({ output }) {
             {/* Partial Output */}
             {output.output && (
               <div>
-                <div className="text-xs font-semibold text-base-content/50 uppercase tracking-wide mb-2">
-                  Partial Output
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-4 h-4 text-warning" />
+                  <span className="text-xs font-bold text-warning uppercase tracking-wide">
+                    Partial Output (Before Error)
+                  </span>
                 </div>
-                <div className="bg-base-200 rounded p-3 border border-base-300">
-                  <pre className="text-sm font-mono text-base-content/70 whitespace-pre-wrap break-words">
+                <div className="bg-neutral rounded-lg p-4 border-2 border-warning/30 shadow-inner">
+                  <pre className="text-sm font-mono text-warning whitespace-pre-wrap break-words leading-relaxed">
                     {output.output}
                   </pre>
                 </div>
               </div>
             )}
+
+            {/* Help Message */}
+            <div className="bg-base-200/50 border border-base-300 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-sm font-bold text-base-content mb-1">
+                    Debugging Tips:
+                  </div>
+                  <ul className="text-sm text-base-content/70 space-y-1 list-disc list-inside">
+                    <li>Check for syntax errors in your code</li>
+                    <li>Verify variable names and types</li>
+                    <li>Ensure proper input/output format</li>
+                    <li>Look for runtime exceptions in the error message</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
