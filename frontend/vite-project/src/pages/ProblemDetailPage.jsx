@@ -10,60 +10,51 @@ import { executeCode } from '../lib/piston';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
 
-// OPTION 1: Minimal starter code (just boilerplate, no hints)
-const STARTER_CODE_TEMPLATES = {
-  javascript: `const readline = require('readline');
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-let input = [];
-rl.on('line', (line) => {
-    input.push(line);
-}).on('close', () => {
-    // Write your code here
-});
-`,
-
-  python: `# Write your code here
-`,
-
-  java: `import java.util.*;
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        
-        // Write your code here
-        
-        sc.close();
-    }
-}
-`,
-
-  cpp: `#include <iostream>
-using namespace std;
-
-int main() {
-    // Write your code here
-    
-    return 0;
-}
-`,
-
-  c: `#include <stdio.h>
-
-int main() {
-    // Write your code here
-    
-    return 0;
-}
-`
+// Language configuration with CDN logo URLs
+const LANGUAGE_CONFIG = {
+  javascript: {
+    name: 'JavaScript',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg',
+    bgColor: 'bg-yellow-50',
+    textColor: 'text-yellow-800',
+    borderColor: 'border-yellow-400',
+    hoverBg: 'hover:bg-yellow-100'
+  },
+  python: {
+    name: 'Python',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg',
+    bgColor: 'bg-blue-50',
+    textColor: 'text-blue-800',
+    borderColor: 'border-blue-400',
+    hoverBg: 'hover:bg-blue-100'
+  },
+  java: {
+    name: 'Java',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg',
+    bgColor: 'bg-red-50',
+    textColor: 'text-red-800',
+    borderColor: 'border-red-400',
+    hoverBg: 'hover:bg-red-100'
+  },
+  cpp: {
+    name: 'C++',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg',
+    bgColor: 'bg-indigo-50',
+    textColor: 'text-indigo-800',
+    borderColor: 'border-indigo-400',
+    hoverBg: 'hover:bg-indigo-100'
+  },
+  c: {
+    name: 'C',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg',
+    bgColor: 'bg-gray-50',
+    textColor: 'text-gray-800',
+    borderColor: 'border-gray-400',
+    hoverBg: 'hover:bg-gray-100'
+  }
 };
 
-// OPTION 2: Completely blank (uncomment to use)
-/*
+// Empty starter code - users write complete solutions
 const STARTER_CODE_TEMPLATES = {
   javascript: '',
   python: '',
@@ -71,7 +62,6 @@ const STARTER_CODE_TEMPLATES = {
   cpp: '',
   c: ''
 };
-*/
 
 function ProblemDetailPage() {
   const { id } = useParams();
@@ -117,9 +107,8 @@ function ProblemDetailPage() {
     loadData();
   }, [id, selectedLanguage]);
 
-  const handleLanguageChange = (e) => {
-    const newLang = e.target.value;
-    setSelectedLanguage(newLang);
+  const handleLanguageChange = (lang) => {
+    setSelectedLanguage(lang);
     if (currentProblem) {
       setCode(currentProblem.starterCode?.[newLang] || '');
     }
@@ -168,10 +157,6 @@ function ProblemDetailPage() {
     return normalizedActual === normalizedExpected;
   };
 
-  /**
-   * Format test case input for standard input
-   * Handles arrays and converts them to space/newline separated format
-   */
   const formatInputForStdin = (testInput) => {
     if (typeof testInput === 'string') {
       return testInput;
@@ -198,7 +183,6 @@ function ProblemDetailPage() {
     setIsRunning(true);
     setOutput(null);
 
-    // Get the first test case
     const testCase = currentProblem.testCases[0];
     const stdin = formatInputForStdin(testCase.input);
 
@@ -210,7 +194,6 @@ function ProblemDetailPage() {
     setIsRunning(false);
 
     if (result.success) {
-      // Check if output matches expected
       const expectedOutput = testCase.expectedOutput;
       if (expectedOutput) {
         const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
@@ -254,6 +237,46 @@ function ProblemDetailPage() {
   return (
     <div className="h-screen bg-base-100 flex flex-col">
       <Navbar />
+
+      {/* Enhanced Language Selector Toolbar */}
+      <div className="bg-base-200 border-b border-base-300 px-6 py-3 shadow-sm">
+        <div className="flex items-center justify-between max-w-full">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-semibold text-base-content/70 uppercase tracking-wide">
+              Select Language:
+            </span>
+            <div className="flex gap-2 flex-wrap">
+              {Object.entries(LANGUAGE_CONFIG).map(([lang, config]) => (
+                <button
+                  key={lang}
+                  onClick={() => handleLanguageChange(lang)}
+                  className={`
+                    flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-200
+                    border-2 font-medium text-sm
+                    ${selectedLanguage === lang 
+                      ? `${config.bgColor} ${config.textColor} ${config.borderColor} shadow-md scale-105` 
+                      : `bg-base-100 border-base-300 text-base-content/80 ${config.hoverBg} hover:border-base-400 hover:shadow`
+                    }
+                  `}
+                >
+                  <img 
+                    src={config.logo} 
+                    alt={`${config.name} logo`}
+                    className="w-5 h-5 object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  <span>{config.name}</span>
+                  {selectedLanguage === lang && (
+                    <span className="ml-1">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="flex-1">
         <PanelGroup direction="horizontal">
