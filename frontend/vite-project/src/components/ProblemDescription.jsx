@@ -1,41 +1,45 @@
 import React from 'react';
-import { getDifficultyBadgeClass } from "../lib/utils";
+import { BookOpen, Tag, AlertCircle, CheckSquare, FileCode } from 'lucide-react';
 
-/**
- * ProblemDescription component displays detailed problem information
- * @param {Object} problem - The problem data object
- * @param {string} currentProblemId - ID of currently selected problem
- * @param {Function} onProblemChange - Callback for problem selection change
- * @param {Array} allProblems - Array of all available problems
- */
 function ProblemDescription({ problem, currentProblemId, onProblemChange, allProblems }) {
-  const getDifficultyColor = (difficulty) => {
-    const colors = {
-      easy: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-      medium: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-      hard: 'text-rose-400 bg-rose-500/10 border-rose-500/30'
+  const getDifficultyConfig = (difficulty) => {
+    const configs = {
+      easy: {
+        color: 'text-emerald-500',
+        bgColor: 'bg-emerald-500/15',
+        borderColor: 'border-emerald-500/40',
+        dotColor: 'bg-emerald-500',
+        label: 'Easy'
+      },
+      medium: {
+        color: 'text-amber-500',
+        bgColor: 'bg-amber-500/15',
+        borderColor: 'border-amber-500/40',
+        dotColor: 'bg-amber-500',
+        label: 'Medium'
+      },
+      hard: {
+        color: 'text-rose-500',
+        bgColor: 'bg-rose-500/15',
+        borderColor: 'border-rose-500/40',
+        dotColor: 'bg-rose-500',
+        label: 'Hard'
+      }
     };
-    return colors[difficulty?.toLowerCase()] || colors.medium;
+    return configs[difficulty?.toLowerCase()] || configs.medium;
   };
 
-  const getDifficultyDot = (difficulty) => {
-    const colors = {
-      easy: 'bg-emerald-400',
-      medium: 'bg-amber-400',
-      hard: 'bg-rose-400'
-    };
-    return colors[difficulty?.toLowerCase()] || colors.medium;
-  };
+  const difficultyConfig = getDifficultyConfig(problem.difficulty);
 
   return (
     <div className="h-full flex flex-col bg-base-100">
-      {/* Header with Problem Selector */}
-      <div className="px-6 py-4 border-b border-base-300 bg-base-200/50">
+      {/* Enhanced Header */}
+      <div className="px-6 py-4 border-b-2 border-base-300 bg-gradient-to-br from-base-200 to-base-200/50 shadow-sm">
         <div className="flex items-center gap-3 mb-3">
           <select
             value={currentProblemId}
             onChange={(e) => onProblemChange(e.target.value)}
-            className="select select-bordered select-sm flex-1 bg-base-100 focus:outline-none focus:border-primary"
+            className="select select-bordered flex-1 bg-base-100 focus:outline-none focus:border-primary font-semibold"
           >
             {(allProblems || []).map((p) => (
               <option key={p.id} value={p.id}>
@@ -44,47 +48,49 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
             ))}
           </select>
           
-          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getDifficultyColor(problem.difficulty)}`}>
-            <div className="flex items-center gap-1.5">
-              <div className={`w-1.5 h-1.5 rounded-full ${getDifficultyDot(problem.difficulty)}`} />
-              {problem.difficulty || 'Medium'}
+          <div className={`px-4 py-2 rounded-lg text-xs font-bold border-2 ${difficultyConfig.bgColor} ${difficultyConfig.color} ${difficultyConfig.borderColor} shadow-sm`}>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${difficultyConfig.dotColor} animate-pulse`} />
+              {difficultyConfig.label}
             </div>
           </div>
         </div>
         
         {problem.category && (
-          <div className="flex items-center gap-2 text-xs text-base-content/60">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            {problem.category}
+          <div className="flex items-center gap-2 text-xs text-base-content/60 bg-base-100/50 px-3 py-1.5 rounded-md w-fit">
+            <Tag className="w-3.5 h-3.5" />
+            <span className="font-medium">{problem.category}</span>
           </div>
         )}
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
         {/* Title */}
-        <h1 className="text-2xl font-bold text-white mb-6 leading-tight">
-          {problem.title}
-        </h1>
+        <div>
+          <h1 className="text-3xl font-bold text-base-content mb-2 leading-tight">
+            {problem.title}
+          </h1>
+          <div className="h-1 w-20 bg-primary rounded-full"></div>
+        </div>
 
-        {/* Description with bold text support */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
-            <div className="w-1 h-5 bg-primary rounded-full" />
-            Problem Statement
-          </h2>
-          <div className="bg-base-200/30 rounded-lg border border-base-300 p-4">
-            <div className="text-base text-white/80 leading-relaxed space-y-2">
+        {/* Description */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-base-content">
+              Problem Statement
+            </h2>
+          </div>
+          <div className="bg-base-200/40 rounded-xl border-2 border-base-300 p-5 shadow-sm">
+            <div className="text-base text-base-content/90 leading-relaxed space-y-3">
               {problem.description?.split('\n').map((line, idx) => {
-                // Convert **text** to bold
                 const parts = line.split(/(\*\*.*?\*\*)/g);
                 return (
-                  <p key={idx}>
+                  <p key={idx} className="text-justify">
                     {parts.map((part, i) => {
                       if (part.startsWith('**') && part.endsWith('**')) {
-                        return <strong key={i}>{part.slice(2, -2)}</strong>;
+                        return <strong key={i} className="text-base-content font-bold">{part.slice(2, -2)}</strong>;
                       }
                       return <span key={i}>{part}</span>;
                     })}
@@ -97,81 +103,89 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
 
         {/* Examples Section */}
         {problem.examples && problem.examples.length > 0 && (
-          <div className="space-y-6 mb-8">
-            <h2 className="text-lg font-semibold text-white/90 flex items-center gap-2">
-              <div className="w-1 h-5 bg-primary rounded-full" />
-              Examples
-            </h2>
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <FileCode className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-base-content">
+                Examples
+              </h2>
+            </div>
             
-            {(problem.examples || []).map((example, idx) => (
-              <div 
-                key={idx}
-                className="bg-base-200/50 rounded-lg border border-base-300 overflow-hidden hover:border-base-300/60 transition-colors"
-              >
-                <div className="px-4 py-2 bg-base-300/30 border-b border-base-300 flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                    <span className="text-xs font-bold text-primary">{idx + 1}</span>
+            <div className="space-y-4">
+              {(problem.examples || []).map((example, idx) => (
+                <div 
+                  key={idx}
+                  className="bg-base-200/30 rounded-xl border-2 border-base-300 overflow-hidden hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
+                >
+                  <div className="px-4 py-3 bg-gradient-to-r from-primary/20 to-primary/5 border-b-2 border-base-300 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center border-2 border-primary/50">
+                      <span className="text-sm font-bold text-primary">{idx + 1}</span>
+                    </div>
+                    <span className="text-sm font-bold text-base-content">
+                      Example {idx + 1}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-white/70">
-                    Example {idx + 1}
-                  </span>
-                </div>
-                
-                <div className="p-4 space-y-3">
-                  {/* Input */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="text-xs font-semibold text-white/50 uppercase tracking-wide">
-                        Input
+                  
+                  <div className="p-5 space-y-4">
+                    {/* Input */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-xs font-bold text-info uppercase tracking-wider">
+                          Input
+                        </div>
+                      </div>
+                      <div className="bg-neutral/50 rounded-lg px-4 py-3 font-mono text-sm text-info border-2 border-info/20 shadow-inner whitespace-pre-wrap">
+                        {example.input || 'No input provided'}
                       </div>
                     </div>
-                    <div className="bg-base-300/50 rounded px-3 py-2.5 font-mono text-sm text-primary border border-base-300 whitespace-pre-wrap">
-                      {example.input || 'No input provided'}
-                    </div>
-                  </div>
 
-                  {/* Output */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="text-xs font-semibold text-white/50 uppercase tracking-wide">
-                        Output
+                    {/* Output */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-xs font-bold text-success uppercase tracking-wider">
+                          Output
+                        </div>
+                      </div>
+                      <div className="bg-neutral/50 rounded-lg px-4 py-3 font-mono text-sm text-success border-2 border-success/20 shadow-inner whitespace-pre-wrap">
+                        {example.output || 'No output provided'}
                       </div>
                     </div>
-                    <div className="bg-base-300/50 rounded px-3 py-2.5 font-mono text-sm text-emerald-400 border border-base-300 whitespace-pre-wrap">
-                      {example.output || 'No output provided'}
-                    </div>
-                  </div>
 
-                  {/* Explanation if available */}
-                  {example.explanation && (
-                    <div className="pt-2 mt-2 border-t border-base-300">
-                      <div className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-1.5">
-                        Explanation
+                    {/* Explanation */}
+                    {example.explanation && (
+                      <div className="pt-3 mt-3 border-t-2 border-base-300">
+                        <div className="text-xs font-bold text-base-content/60 uppercase tracking-wider mb-2">
+                          Explanation
+                        </div>
+                        <div className="text-sm text-base-content/80 leading-relaxed bg-base-100/50 p-3 rounded-lg">
+                          {example.explanation}
+                        </div>
                       </div>
-                      <div className="text-sm text-white/70 leading-relaxed">
-                        {example.explanation}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
         {/* Constraints */}
         {problem.constraints && problem.constraints.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white/90 mb-4 flex items-center gap-2">
-              <div className="w-1 h-5 bg-primary rounded-full" />
-              Constraints
-            </h2>
-            <div className="bg-base-200/30 rounded-lg border border-base-300 p-4">
-              <ul className="space-y-2.5">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <AlertCircle className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-base-content">
+                Constraints
+              </h2>
+            </div>
+            <div className="bg-base-200/40 rounded-xl border-2 border-base-300 p-5 shadow-sm">
+              <ul className="space-y-3">
                 {problem.constraints.map((constraint, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-white/70">
-                    <span className="text-primary mt-0.5 font-bold">•</span>
-                    <code className="font-mono text-white/80">{constraint}</code>
+                  <li key={idx} className="flex items-start gap-3 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                    <code className="font-mono text-base-content/90 bg-base-300/50 px-2 py-1 rounded flex-1">
+                      {constraint}
+                    </code>
                   </li>
                 ))}
               </ul>
@@ -179,37 +193,36 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
           </div>
         )}
 
-        {/* Test Cases Info (if available) */}
+        {/* Test Cases Info */}
         {problem.testCases && problem.testCases.length > 0 && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-8">
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/30 rounded-xl p-5 shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="text-primary mt-0.5">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+              <CheckSquare className="w-6 h-6 text-primary mt-0.5 flex-shrink-0" />
               <div>
-                <div className="text-sm font-semibold text-primary mb-1">Note</div>
-                <div className="text-sm text-white/70">
-                  Your solution will be tested against {problem.testCases.length} test case{problem.testCases.length !== 1 ? 's' : ''}.
+                <div className="text-sm font-bold text-primary mb-2">Testing Information</div>
+                <div className="text-sm text-base-content/80 leading-relaxed">
+                  Your solution will be evaluated against <strong className="text-primary">{problem.testCases.length}</strong> test case{problem.testCases.length !== 1 ? 's' : ''}. 
+                  Make sure your code handles all edge cases and meets the constraints.
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tags (if available) */}
+        {/* Tags */}
         {problem.tags && problem.tags.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white/90 mb-3 flex items-center gap-2">
-              <div className="w-1 h-5 bg-primary rounded-full" />
-              Topics
-            </h2>
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Tag className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-base-content">
+                Topics
+              </h2>
+            </div>
             <div className="flex flex-wrap gap-2">
               {problem.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1.5 bg-base-300/50 text-white/80 rounded-full text-xs font-medium border border-base-300 hover:border-primary hover:bg-base-300/70 transition-all cursor-pointer"
+                  className="px-4 py-2 bg-base-200/60 text-base-content/90 rounded-lg text-sm font-semibold border-2 border-base-300 hover:border-primary hover:bg-base-200 transition-all cursor-pointer shadow-sm hover:shadow-md hover:scale-105"
                 >
                   {tag}
                 </span>
