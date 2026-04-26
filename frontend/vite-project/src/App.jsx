@@ -8,7 +8,6 @@ import WelcomePage from './pages/WelcomePage'
 import DashBoardPage from './pages/DashBoardPage'
 import SessionPage from './pages/SessionPage'
 import ProblemDetailPage from './pages/ProblemDetailPage'
-import DemoPage from './components/DemoPage'
 import { Toaster } from 'react-hot-toast'
 
 function App() {
@@ -39,8 +38,6 @@ function App() {
           path="/" 
           element={isSignedIn ? <Navigate to="/dashboard" /> : <HomePage />} 
         />
-
-        <Route path="/demo" element={<DemoPage />} />
 
         {/* Protected Dashboard */}
         <Route 

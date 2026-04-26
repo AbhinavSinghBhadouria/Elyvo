@@ -40,7 +40,7 @@ function SessionPage() {
     setAiModalContent("");
     setAiIsLoading(true);
     setAiModalOpen(true);
-
+    
     try {
       const data = await aiApi.getHint(problemData.description);
       setAiModalContent(data.response);
@@ -362,7 +362,7 @@ function SessionPage() {
         </PanelGroup>
       </div>
 
-      <AIAssistantModal
+      <AIAssistantModal 
         isOpen={aiModalOpen}
         onClose={() => setAiModalOpen(false)}
         title={aiModalTitle}
