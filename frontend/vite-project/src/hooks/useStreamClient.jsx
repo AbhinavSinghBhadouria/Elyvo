@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { StreamVideoClient } from "@stream-io/video-react-sdk";
 import { StreamChat } from "stream-chat";
+import { chatApi } from "../api/chat";
 
 const useStreamClient = (session, loadingSession, isHost, isParticipant) => {
   const [streamClient, setStreamClient] = useState(null);
@@ -20,32 +21,36 @@ const useStreamClient = (session, loadingSession, isHost, isParticipant) => {
       setIsInitializingCall(true);
 
       try {
-        // You'll need to get these from your backend
+        // 1. Fetch Token and User Info from Backend
+        const { token: userToken, userID: userId, userName, userImage } = await chatApi.getToken();
+        
         const apiKey = import.meta.env.VITE_STREAM_API_KEY;
-        const userToken = session.streamToken; // This should come from your session data
-        const userId = session.currentUserId; // This should come from your session data
-        const callId = session.id;
+        const callId = session.callId; // Use the callId from the session DB
 
-        // Initialize Video Client
+        if (!apiKey) {
+          throw new Error("VITE_STREAM_API_KEY is missing in frontend env");
+        }
+
+        // 2. Initialize Video Client
         const videoClient = new StreamVideoClient({
           apiKey,
           user: {
             id: userId,
-            name: session.currentUserName,
-            image: session.currentUserImage,
+            name: userName || userId,
+            image: userImage || "",
           },
           token: userToken,
         });
 
-        // Create or join call
+        // 3. Create or join call
         const videoCall = videoClient.call("default", callId);
         
         if (isHost) {
           await videoCall.getOrCreate({
-            ring: true,
             data: {
               custom: {
-                sessionId: session.id,
+                sessionId: session._id,
+                problem: session.problem,
               },
             },
           });
@@ -53,19 +58,19 @@ const useStreamClient = (session, loadingSession, isHost, isParticipant) => {
           await videoCall.join();
         }
 
-        // Initialize Chat Client
+        // 4. Initialize Chat Client
         const chatClientInstance = StreamChat.getInstance(apiKey);
         
         await chatClientInstance.connectUser(
           {
             id: userId,
-            name: session.currentUserName,
-            image: session.currentUserImage,
+            name: userName || userId,
+            image: userImage || "",
           },
           userToken
         );
 
-        // Create or get channel
+        // 5. Create or get channel
         const chatChannel = chatClientInstance.channel("messaging", callId, {
           name: `Session: ${session.problem}`,
           members: [userId],
@@ -88,18 +93,15 @@ const useStreamClient = (session, loadingSession, isHost, isParticipant) => {
 
     // Cleanup function
     return () => {
-      if (call) {
-        call.leave().catch(console.error);
-      }
-      if (chatClient) {
-        chatClient.disconnectUser().catch(console.error);
-      }
-      if (streamClient) {
-        streamClient.disconnectUser().catch(console.error);
-      }
+      const cleanup = async () => {
+        if (call) await call.leave().catch(console.error);
+        if (chatClient) await chatClient.disconnectUser().catch(console.error);
+        if (streamClient) await streamClient.disconnectUser().catch(console.error);
+      };
+      cleanup();
     };
 
-  }, [session, loadingSession, isHost, isParticipant, call, chatClient, streamClient]);
+  }, [session, loadingSession, isHost, isParticipant]); // Removed call/chatClient/streamClient from deps to avoid infinite loop
 
   return {
     streamClient,

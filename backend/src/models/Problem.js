@@ -11,8 +11,8 @@ const problemSchema = new mongoose.Schema({
   description: { type: String, required: true },
   examples: [{
     id: Number,
-    inputText: String,
-    outputText: String,
+    input: String,
+    output: String,
     explanation: String,
     img: String
   }],

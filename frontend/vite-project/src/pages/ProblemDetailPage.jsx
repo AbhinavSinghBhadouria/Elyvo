@@ -9,6 +9,8 @@ import ProblemDescription from '../components/ProblemDescription';
 import { executeCode } from '../lib/piston';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
+import { aiApi } from '../api/ai';
+import AIAssistantModal from '../components/AIAssistantModal';
 
 // Language configuration with CDN logo URLs
 const LANGUAGE_CONFIG = {
@@ -79,6 +81,48 @@ function ProblemDetailPage() {
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // AI Assistant State
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiModalTitle, setAiModalTitle] = useState("");
+  const [aiModalContent, setAiModalContent] = useState("");
+  const [aiIsLoading, setAiIsLoading] = useState(false);
+
+  const handleGetHint = async () => {
+    if (!currentProblem) return;
+    setAiModalTitle("Intelligent Hint");
+    setAiModalContent("");
+    setAiIsLoading(true);
+    setAiModalOpen(true);
+    
+    try {
+      const data = await aiApi.getHint(currentProblem.description);
+      setAiModalContent(data.response);
+    } catch (error) {
+      setAiModalContent("Sorry, I couldn't generate a hint at this time. Please try again.");
+      toast.error("Failed to connect to AI Assistant");
+    } finally {
+      setAiIsLoading(false);
+    }
+  };
+
+  const handleGetReview = async () => {
+    if (!currentProblem || !code) return;
+    setAiModalTitle("Code Review");
+    setAiModalContent("");
+    setAiIsLoading(true);
+    setAiModalOpen(true);
+
+    try {
+      const data = await aiApi.getCodeReview(currentProblem.description, code, selectedLanguage);
+      setAiModalContent(data.response);
+    } catch (error) {
+      setAiModalContent("Sorry, I couldn't perform a code review at this time. Please try again.");
+      toast.error("Failed to connect to AI Assistant");
+    } finally {
+      setAiIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -336,6 +380,8 @@ function ProblemDetailPage() {
                   onLanguageChange={handleLanguageChange}
                   onCodeChange={setCode}
                   onRunCode={handleRunCode}
+                  onGetHint={handleGetHint}
+                  onGetReview={handleGetReview}
                 />
               </Panel>
 
@@ -349,6 +395,14 @@ function ProblemDetailPage() {
           </Panel>
         </PanelGroup>
       </div>
+
+      <AIAssistantModal 
+        isOpen={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        title={aiModalTitle}
+        content={aiModalContent}
+        isLoading={aiIsLoading}
+      />
     </div>
   );
 }

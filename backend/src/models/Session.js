@@ -7,7 +7,7 @@ const sessionSchema= new mongoose.Schema({
     },
     difficulty:{
         type:String,
-        enum:["easy","medium","hard"],
+        enum:["easy","medium","hard", "Easy", "Medium", "Hard"],
         required: true
     },
     host:{
@@ -24,6 +24,15 @@ const sessionSchema= new mongoose.Schema({
         type:String,
         enum:["completed", "active"],
         default: "active"
+    },
+    joinCode: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    password: {
+        type: String,
+        default: ""
     },
     callId:{
         type: String,

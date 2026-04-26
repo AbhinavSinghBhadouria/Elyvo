@@ -8,7 +8,9 @@ export async function getStreamToken(req,res){
         }
         
         //we are using clerkId for Stream not mongoDB id because stream is taking our clerkId and the id present in the stream dashboard will match to the clerID
-        const token = chatClient.createToken(req.user.clerkId)
+        // Set token expiration to 67 days
+        const expirationTime = Math.floor(Date.now() / 1000) + (67 * 24 * 60 * 60);
+        const token = chatClient.createToken(req.user.clerkId, expirationTime);
 
         res.status(200).json({
             token,
