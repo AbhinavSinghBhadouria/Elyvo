@@ -29,11 +29,11 @@
 
 ---
 
-## 🛠️ Technical Architecture
+## 🏗️ System Architecture & Logic
 
-Elyvo is built using a high-performance MERN stack with modern cloud integrations.
+### 1. High-Level System Design
+Visualizing the interaction between the Frontend, Backend, and third-party integrations (Clerk, Stream, Groq).
 
-### System Flow
 ```mermaid
 graph TD
     User((User))
@@ -53,21 +53,87 @@ graph TD
     Frontend --> Stream
 ```
 
-### Authentication & Handshake
+---
+
+### 2. Interview Session & Handshake Flow
+How hosts create sessions and how tokens are securely generated with a **67-day expiry**.
+
 ```mermaid
 sequenceDiagram
-    participant H as Host
+    participant H as Host (User)
+    participant F as Frontend
     participant B as Backend
-    participant S as Stream
-    H->>B: Create Session
-    B->>S: Request Token (67 Day Expiry)
-    S-->>B: Signed HMAC Token
-    B-->>H: Session ID + joinCode
+    participant C as Clerk
+    participant S as Stream (Video/Chat)
+
+    H->>F: Create Session (Problem X)
+    F->>C: Validate JWT
+    C-->>F: Valid
+    F->>B: POST /api/sessions
+    B->>B: Create unique joinCode
+    B->>S: Request Video/Chat Token (67 Day Expiry)
+    S-->>B: Token
+    B-->>F: Session ID + joinCode
+    F->>H: Navigate to /session/:id
 ```
 
 ---
 
-## 💻 Tech Stack
+### 3. AI-Powered Problem Solving Flow
+How code execution and AI hints are processed in real-time.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant IDE as Code Editor
+    participant B as Backend API
+    participant P as Piston (Code Engine)
+    participant AI as Groq/Gemini
+
+    U->>IDE: Write Code
+    U->>IDE: Click "Execute"
+    IDE->>B: POST /api/code/run
+    B->>P: Execute Source (Sandboxed)
+    P-->>B: Stdout / Stderr
+    B-->>IDE: Format Output
+    IDE->>U: Show Result
+
+    Note over U, AI: AI Logic Review
+    U->>IDE: Click "Get Hint"
+    IDE->>B: POST /api/ai/hint
+    B->>AI: Prompt(Context + Problem)
+    AI-->>B: Sarcastic Hint (Roast style)
+    B-->>IDE: Success
+    IDE->>U: Display Modal
+```
+
+---
+
+### 4. Backend Middleware Pipeline
+The internal request lifecycle for secure API endpoints.
+
+```mermaid
+graph LR
+    Req[Incoming Request] --> Clerk[Clerk Middleware]
+    Clerk --> |Invalid| 401[401 Unauthorized]
+    Clerk --> |Valid| PR[ProtectRoute Middleware]
+    
+    PR --> |Find User| DB[(MongoDB)]
+    DB --> |User Exists| Attach[Attach User to Req Object]
+    
+    Attach --> Admin{Admin Route?}
+    Admin --> |Yes| AdminAuth[AdminSecret / ID Check]
+    Admin --> |No| Controller[Route Controller]
+    
+    AdminAuth --> |Fail| 403[403 Forbidden]
+    AdminAuth --> |Pass| Controller
+    
+    Controller --> Response[JSON Response]
+```
+
+---
+
+## 🛠️ Tech Stack
 
 - **Frontend**: React (Vite), Tailwind CSS, Lucide-React, Monaco Editor.
 - **Backend**: Node.js, Express, Mongoose.
@@ -80,9 +146,9 @@ sequenceDiagram
 
 ## 🔐 Administration
 
-Elyvo 2.0 features a professional admin layer. Admins can manage the global problem set via Postman or the internal dashboard using a dual-auth system (Admin Secret + User ID validation).
+Elyvo 2.0 features a professional admin layer. Admins can manage the global problem set via Postman or the internal dashboard.
 
-Refer to the **[ADMIN_GUIDE.md](./ADMIN_GUIDE.md)** for detailed API documentation and schema references.
+Refer to the **[ADMIN_GUIDE.md](./ADMIN_GUIDE.md)** for detailed API documentation.
 
 ---
 
@@ -120,15 +186,6 @@ cd ../frontend/vite-project && npm install
 # From root
 npm run dev
 ```
-
----
-
-## 📈 Roadmap
-- [x] Version 2.0 Premium UI Overhaul
-- [x] AI Integrated Code Reviews
-- [x] Multi-admin Problem API
-- [ ] Collaborative Whiteboard
-- [ ] Session Playback/Recording
 
 ---
 
