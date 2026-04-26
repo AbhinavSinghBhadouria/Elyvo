@@ -1,5 +1,7 @@
 import { requireAuth } from "@clerk/express";
 import User from "../models/User.js";
+import { ENV } from "../lib/env.js";
+
 
 export const protectionRoute = [
     requireAuth(),
@@ -28,3 +30,18 @@ export const protectionRoute = [
         }
     }
 ];
+
+export const adminAuth = (req, res, next) => {
+    const adminSecret = req.headers['x-admin-secret'];
+    const clerkId = req.auth?.userId;
+    
+    const allowedIds = ENV.ADMIN_IDS.split(',').map(id => id.trim());
+    
+    const isSecretValid = adminSecret && adminSecret === ENV.ADMIN_SECRET;
+    const isIdValid = clerkId && allowedIds.includes(clerkId);
+
+    if (!isSecretValid && !isIdValid) {
+        return res.status(401).json({ msg: "Unauthorized - Access Restricted to Admins" });
+    }
+    next();
+};

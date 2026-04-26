@@ -1,15 +1,15 @@
-import { Link, useLocation } from "react-router-dom";
-import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon, TrophyIcon } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { BookOpenIcon, ChevronLeftIcon, LayoutDashboardIcon, SparklesIcon, TrophyIcon, ArrowLeft } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = (path) => location.pathname === path;
   const [solvedCount, setSolvedCount] = useState(0);
 
   useEffect(() => {
-    // Load solved count from localStorage
     const updateSolvedCount = () => {
       const saved = localStorage.getItem('solvedProblems');
       if (saved) {
@@ -21,16 +21,9 @@ function Navbar() {
         }
       }
     };
-
-    // Initial load
     updateSolvedCount();
-
-    // Listen for storage changes (when problems are marked solved/unsolved)
     window.addEventListener('storage', updateSolvedCount);
-    
-    // Custom event for same-tab updates
     window.addEventListener('solvedProblemsUpdated', updateSolvedCount);
-
     return () => {
       window.removeEventListener('storage', updateSolvedCount);
       window.removeEventListener('solvedProblemsUpdated', updateSolvedCount);
@@ -38,78 +31,73 @@ function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 bg-gradient-to-r from-[#05070f]/95 via-[#060016]/85 to-[#05070f]/95 backdrop-blur-2xl border-b border-white/5 shadow-[0_15px_35px_rgba(5,2,23,0.65)]">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* LOGO */}
+    <nav className="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 shadow-xl">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between relative">
+        {/* LEFT - NAVIGATION */}
+        <div className="flex items-center gap-2">
+          {location.pathname !== "/" && (
+            <button 
+              onClick={() => navigate(-1)}
+              className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-white/5 transition-all text-slate-500 hover:text-white"
+            >
+              <ArrowLeft className="size-4" />
+              <span className="text-xs font-semibold">Back</span>
+            </button>
+          )}
+          
+          <Link
+            to="/problems"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200
+              ${isActive("/problems") ? "text-blue-400 bg-blue-500/10" : "text-slate-400 hover:text-white hover:bg-white/5"}`}
+          >
+            <BookOpenIcon className="size-4" />
+            <span className="text-xs font-semibold">Problems</span>
+          </Link>
+        </div>
+
+        {/* CENTER - LOGO */}
         <Link
           to="/"
-          className="group flex items-center gap-3 hover:scale-[1.02] transition-transform duration-200"
+          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 group"
         >
-          <div className="size-11 rounded-2xl bg-gradient-to-r from-primary via-secondary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
-            <SparklesIcon className="size-6 text-white drop-shadow-lg" />
+          <div className="size-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform duration-300">
+            <SparklesIcon className="size-5 text-white" />
           </div>
-
-          <div className="flex flex-col">
-            <span className="font-black text-2xl bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent tracking-[0.4em]">
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-xl text-white tracking-tight leading-none">
               ELYVO
             </span>
-            <span className="text-[11px] tracking-[0.6em] text-white/60 -mt-1 uppercase">
-              Interview Lab
+            <span className="text-[8px] tracking-[0.3em] text-slate-500 uppercase font-bold mt-1">
+              PRO
             </span>
           </div>
         </Link>
 
-        <div className="flex items-center gap-1">
-          {/* PROBLEMS PAGE LINK */}
+        {/* RIGHT - ACTIONS */}
+        <div className="flex items-center gap-2">
           <Link
-            to={"/problems"}
-            className={`px-4 py-2.5 rounded-lg transition-all duration-200 
-              ${
-                isActive("/problems")
-                  ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/40"
-                  : "hover:bg-white/5 text-white/70 hover:text-white border border-transparent hover:border-white/10"
-              }
-              
-              `}
+            to="/dashboard"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200
+              ${isActive("/dashboard") ? "text-white bg-white/5" : "text-slate-400 hover:text-white hover:bg-white/5"}`}
           >
-            <div className="flex items-center gap-x-2.5">
-              <BookOpenIcon className="size-4" />
-              <span className="font-medium hidden sm:inline tracking-wide">Problems</span>
-            </div>
+            <LayoutDashboardIcon className="size-4" />
+            <span className="text-xs font-semibold hidden sm:inline">Dashboard</span>
           </Link>
 
-          {/* DASHBOARD PAGE LINK */}
-          <Link
-            to={"/dashboard"}
-            className={`px-4 py-2.5 rounded-lg transition-all duration-200 
-              ${
-                isActive("/dashboard")
-                  ? "bg-gradient-to-r from-secondary to-accent text-white shadow-lg shadow-secondary/40"
-                  : "hover:bg-white/5 text-white/70 hover:text-white border border-transparent hover:border-white/10"
-              }
-              
-              `}
-          >
-            <div className="flex items-center gap-x-2.5">
-              <LayoutDashboardIcon className="size-4" />
-              <span className="font-medium hidden sm:inline tracking-wide">Dashboard</span>
-            </div>
-          </Link>
-
-          {/* OPTIONAL: Solved Count Badge */}
           {solvedCount > 0 && (
-            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 ml-2">
-              <TrophyIcon className="size-4 text-green-400" />
-              <span className="text-sm font-semibold text-green-400">{solvedCount}</span>
+            <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+              <TrophyIcon className="size-3 text-emerald-400" />
+              <span className="text-[10px] font-bold text-emerald-400">{solvedCount}</span>
             </div>
           )}
 
-          <div className="ml-4 mt-1">
-            <UserButton />
+          <div className="ml-2">
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </div>
     </nav>
   );
 }
+
 export default Navbar;

@@ -13,6 +13,9 @@ import { protectionRoute } from './middleware/protectRoute.js';
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import problemRoutes from "./routes/problemRoutes.js";
+import codeRoutes from "./routes/codeRoutes.js";
+import aiRoutes from "./routes/ai.routes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
@@ -28,7 +31,7 @@ app.use((req, res, next) => {
   }
   
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-secret');
   res.header('Access-Control-Allow-Credentials', 'true');
   
   // Handle OPTIONS preflight
@@ -47,6 +50,9 @@ app.use("/api/inngest", serve({client : inngest, functions}));
 app.use("/api/problems", problemRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/code", codeRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/admin", adminRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

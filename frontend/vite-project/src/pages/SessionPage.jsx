@@ -12,10 +12,14 @@ import { getDifficultyBadgeClass } from "../lib/utils";
 import { Loader2Icon, LogOutIcon, PhoneOffIcon } from "lucide-react";
 import CodeEditorPanel from "../components/CodeEditorPanel";
 import OutputPanel from "../components/OutputPanel";
+import { codeApi } from "../api/code";
 
 import useStreamClient from "../hooks/useStreamClient";
 import { StreamCall, StreamVideo } from "@stream-io/video-react-sdk";
 import VideoCallUI from "../components/VideoCallUI";
+import { aiApi } from "../api/ai";
+import AIAssistantModal from "../components/AIAssistantModal";
+import toast from "react-hot-toast";
 
 function SessionPage() {
   const navigate = useNavigate();
@@ -23,6 +27,48 @@ function SessionPage() {
   const { user } = useUser();
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+
+  // AI Assistant State
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiModalTitle, setAiModalTitle] = useState("");
+  const [aiModalContent, setAiModalContent] = useState("");
+  const [aiIsLoading, setAiIsLoading] = useState(false);
+
+  const handleGetHint = async () => {
+    if (!problemData) return;
+    setAiModalTitle("Intelligent Hint");
+    setAiModalContent("");
+    setAiIsLoading(true);
+    setAiModalOpen(true);
+    
+    try {
+      const data = await aiApi.getHint(problemData.description);
+      setAiModalContent(data.response);
+    } catch (error) {
+      setAiModalContent("Sorry, I couldn't generate a hint at this time. Please try again.");
+      toast.error("Failed to connect to AI Assistant");
+    } finally {
+      setAiIsLoading(false);
+    }
+  };
+
+  const handleGetReview = async () => {
+    if (!problemData || !code) return;
+    setAiModalTitle("Code Review");
+    setAiModalContent("");
+    setAiIsLoading(true);
+    setAiModalOpen(true);
+
+    try {
+      const data = await aiApi.getCodeReview(problemData.description, code, selectedLanguage);
+      setAiModalContent(data.response);
+    } catch (error) {
+      setAiModalContent("Sorry, I couldn't perform a code review at this time. Please try again.");
+      toast.error("Failed to connect to AI Assistant");
+    } finally {
+      setAiIsLoading(false);
+    }
+  };
 
   const { data: sessionData, isLoading: loadingSession, refetch } = useSessionById(id);
 
@@ -88,16 +134,32 @@ function SessionPage() {
   };
 
   const handleRunCode = async () => {
-    setIsRunning(true);
-    setOutput(null);
+    try {
+      setIsRunning(true);
+      setOutput(null);
 
-    await new Promise((resolve) => setTimeout(resolve, 900));
+      const result = await codeApi.runCode({
+        language: selectedLanguage,
+        sourceCode: code,
+        stdin: "",
+      });
 
-    setOutput({
-      success: true,
-      output: `Preview run for ${selectedLanguage.toUpperCase()} completed.\n\nℹ️ Code execution will be enabled once the Piston service is configured.`,
-    });
-    setIsRunning(false);
+      setOutput(result);
+    } catch (error) {
+      console.error("Error running code:", error);
+      const apiError = error?.response?.data;
+
+      setOutput({
+        success: false,
+        output: apiError?.output || "",
+        error:
+          apiError?.error ||
+          apiError?.msg ||
+          "Failed to run code. Please try again.",
+      });
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const handleEndSession = () => {
@@ -247,6 +309,8 @@ function SessionPage() {
                       onLanguageChange={handleLanguageChange}
                       onCodeChange={handleCodeChange}
                       onRunCode={handleRunCode}
+                      onGetHint={handleGetHint}
+                      onGetReview={handleGetReview}
                     />
                   </Panel>
 
@@ -297,6 +361,14 @@ function SessionPage() {
           </Panel>
         </PanelGroup>
       </div>
+
+      <AIAssistantModal 
+        isOpen={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        title={aiModalTitle}
+        content={aiModalContent}
+        isLoading={aiIsLoading}
+      />
     </div>
   );
 }

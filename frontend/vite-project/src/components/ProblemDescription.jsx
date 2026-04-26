@@ -1,28 +1,25 @@
 import React from 'react';
-import { BookOpen, Tag, AlertCircle, CheckSquare, FileCode } from 'lucide-react';
+import { BookOpen, Tag, AlertCircle, CheckSquare, FileCode, ChevronRight } from 'lucide-react';
 
 function ProblemDescription({ problem, currentProblemId, onProblemChange, allProblems }) {
   const getDifficultyConfig = (difficulty) => {
     const configs = {
       easy: {
-        color: 'text-emerald-500',
-        bgColor: 'bg-emerald-500/15',
-        borderColor: 'border-emerald-500/40',
-        dotColor: 'bg-emerald-500',
+        color: 'text-emerald-400',
+        bgColor: 'bg-emerald-500/10',
+        borderColor: 'border-emerald-500/20',
         label: 'Easy'
       },
       medium: {
-        color: 'text-amber-500',
-        bgColor: 'bg-amber-500/15',
-        borderColor: 'border-amber-500/40',
-        dotColor: 'bg-amber-500',
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-500/10',
+        borderColor: 'border-amber-500/20',
         label: 'Medium'
       },
       hard: {
-        color: 'text-rose-500',
-        bgColor: 'bg-rose-500/15',
-        borderColor: 'border-rose-500/40',
-        dotColor: 'bg-rose-500',
+        color: 'text-rose-400',
+        bgColor: 'bg-rose-500/10',
+        borderColor: 'border-rose-500/20',
         label: 'Hard'
       }
     };
@@ -32,65 +29,61 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
   const difficultyConfig = getDifficultyConfig(problem.difficulty);
 
   return (
-    <div className="h-full flex flex-col bg-base-100">
-      {/* Enhanced Header */}
-      <div className="px-6 py-4 border-b-2 border-base-300 bg-gradient-to-br from-base-200 to-base-200/50 shadow-sm">
-        <div className="flex items-center gap-3 mb-3">
-          <select
-            value={currentProblemId}
-            onChange={(e) => onProblemChange(e.target.value)}
-            className="select select-bordered flex-1 bg-base-100 focus:outline-none focus:border-primary font-semibold"
-          >
-            {(allProblems || []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
-          </select>
+    <div className="h-full flex flex-col bg-[#0a0a0f] text-white">
+      {/* Header */}
+      <div className="px-6 py-6 border-b border-white/5 bg-white/[0.02]">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+             <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+                <FileCode className="size-4 text-primary" />
+             </div>
+             <select
+                value={currentProblemId}
+                onChange={(e) => onProblemChange(e.target.value)}
+                className="bg-transparent text-xl font-bold focus:outline-none cursor-pointer hover:text-primary transition-colors appearance-none pr-8"
+                style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0\' stroke=\'white\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right center', backgroundSize: '1rem'}}
+              >
+                {(allProblems || []).map((p) => (
+                  <option key={p.id} value={p.id} className="bg-[#1a1a24] text-white">
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+          </div>
           
-          <div className={`px-4 py-2 rounded-lg text-xs font-bold border-2 ${difficultyConfig.bgColor} ${difficultyConfig.color} ${difficultyConfig.borderColor} shadow-sm`}>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${difficultyConfig.dotColor} animate-pulse`} />
-              {difficultyConfig.label}
-            </div>
+          <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${difficultyConfig.bgColor} ${difficultyConfig.color} ${difficultyConfig.borderColor}`}>
+            {difficultyConfig.label}
           </div>
         </div>
-        
+
         {problem.category && (
-          <div className="flex items-center gap-2 text-xs text-base-content/60 bg-base-100/50 px-3 py-1.5 rounded-md w-fit">
-            <Tag className="w-3.5 h-3.5" />
-            <span className="font-medium">{problem.category}</span>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/30">
+            <Tag className="w-3 h-3" />
+            <span>{problem.category}</span>
           </div>
         )}
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-        {/* Title */}
-        <div>
-          <h1 className="text-3xl font-bold text-base-content mb-2 leading-tight">
-            {problem.title}
-          </h1>
-          <div className="h-1 w-20 bg-primary rounded-full"></div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-base-content">
-              Problem Statement
-            </h2>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-10 custom-scrollbar">
+        {/* Problem Statement Card */}
+        <section>
+          <div className="flex items-center gap-3 mb-5">
+             <div className="size-1 bg-primary rounded-full shadow-[0_0_8px_primary]" />
+             <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Problem Statement</h2>
           </div>
-          <div className="bg-base-200/40 rounded-xl border-2 border-base-300 p-5 shadow-sm">
-            <div className="text-base text-base-content/90 leading-relaxed space-y-3">
+          <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-6 shadow-2xl backdrop-blur-sm">
+            <div className="text-[15px] text-white/80 leading-relaxed space-y-4 font-medium">
               {problem.description?.split('\n').map((line, idx) => {
+                if (line.startsWith('##')) return <h3 key={idx} className="text-white font-bold pt-4 pb-1 border-b border-white/5">{line.replace(/#/g, '').trim()}</h3>;
+                if (line.startsWith('###')) return <h4 key={idx} className="text-white/60 font-bold pt-2">{line.replace(/#/g, '').trim()}</h4>;
+                
                 const parts = line.split(/(\*\*.*?\*\*)/g);
                 return (
-                  <p key={idx} className="text-justify">
+                  <p key={idx}>
                     {parts.map((part, i) => {
                       if (part.startsWith('**') && part.endsWith('**')) {
-                        return <strong key={i} className="text-base-content font-bold">{part.slice(2, -2)}</strong>;
+                        return <strong key={i} className="text-primary font-bold">{part.slice(2, -2)}</strong>;
                       }
                       return <span key={i}>{part}</span>;
                     })}
@@ -99,136 +92,76 @@ function ProblemDescription({ problem, currentProblemId, onProblemChange, allPro
               })}
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Examples Section */}
+        {/* Examples */}
         {problem.examples && problem.examples.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <FileCode className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-base-content">
-                Examples
-              </h2>
-            </div>
+          <section>
+             <div className="flex items-center gap-3 mb-5">
+                <div className="size-1 bg-secondary rounded-full shadow-[0_0_8px_secondary]" />
+                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Examples</h2>
+             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               {(problem.examples || []).map((example, idx) => (
                 <div 
                   key={idx}
-                  className="bg-base-200/30 rounded-xl border-2 border-base-300 overflow-hidden hover:border-primary/50 transition-all shadow-sm hover:shadow-md"
+                  className="group bg-white/[0.02] rounded-2xl border border-white/5 overflow-hidden hover:border-white/10 transition-all"
                 >
-                  <div className="px-4 py-3 bg-gradient-to-r from-primary/20 to-primary/5 border-b-2 border-base-300 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center border-2 border-primary/50">
-                      <span className="text-sm font-bold text-primary">{idx + 1}</span>
-                    </div>
-                    <span className="text-sm font-bold text-base-content">
-                      Example {idx + 1}
-                    </span>
+                  <div className="px-5 py-3 bg-white/[0.02] border-b border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Example {idx + 1}</span>
+                    <ChevronRight className="size-3 text-white/20 group-hover:text-primary transition-colors" />
                   </div>
                   
-                  <div className="p-5 space-y-4">
-                    {/* Input */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="text-xs font-bold text-info uppercase tracking-wider">
-                          Input
+                  <div className="p-6 space-y-5">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <div className="text-[10px] font-bold text-primary/60 uppercase tracking-[0.2em] mb-2">Input</div>
+                        <div className="bg-black/40 rounded-xl p-4 font-mono text-sm text-primary/90 border border-primary/10 whitespace-pre-wrap">
+                          {example.input}
                         </div>
                       </div>
-                      <div className="bg-neutral/50 rounded-lg px-4 py-3 font-mono text-sm text-info border-2 border-info/20 shadow-inner whitespace-pre-wrap">
-                        {example.input || 'No input provided'}
+                      <div>
+                        <div className="text-[10px] font-bold text-secondary/60 uppercase tracking-[0.2em] mb-2">Output</div>
+                        <div className="bg-black/40 rounded-xl p-4 font-mono text-sm text-secondary/90 border border-secondary/10 whitespace-pre-wrap">
+                          {example.output}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Output */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="text-xs font-bold text-success uppercase tracking-wider">
-                          Output
-                        </div>
-                      </div>
-                      <div className="bg-neutral/50 rounded-lg px-4 py-3 font-mono text-sm text-success border-2 border-success/20 shadow-inner whitespace-pre-wrap">
-                        {example.output || 'No output provided'}
-                      </div>
-                    </div>
-
-                    {/* Explanation */}
                     {example.explanation && (
-                      <div className="pt-3 mt-3 border-t-2 border-base-300">
-                        <div className="text-xs font-bold text-base-content/60 uppercase tracking-wider mb-2">
-                          Explanation
-                        </div>
-                        <div className="text-sm text-base-content/80 leading-relaxed bg-base-100/50 p-3 rounded-lg">
+                      <div className="pt-4 border-t border-white/5">
+                        <div className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-2">Explanation</div>
+                        <p className="text-sm text-white/60 italic leading-relaxed">
                           {example.explanation}
-                        </div>
+                        </p>
                       </div>
                     )}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
         {/* Constraints */}
         {problem.constraints && problem.constraints.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-base-content">
-                Constraints
-              </h2>
+          <section>
+            <div className="flex items-center gap-3 mb-5">
+               <div className="size-1 bg-accent rounded-full shadow-[0_0_8px_accent]" />
+               <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/50">Constraints</h2>
             </div>
-            <div className="bg-base-200/40 rounded-xl border-2 border-base-300 p-5 shadow-sm">
-              <ul className="space-y-3">
+            <div className="bg-white/[0.03] rounded-2xl border border-white/5 p-6">
+              <ul className="space-y-4">
                 {problem.constraints.map((constraint, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm">
-                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    <code className="font-mono text-base-content/90 bg-base-300/50 px-2 py-1 rounded flex-1">
-                      {constraint}
-                    </code>
+                  <li key={idx} className="flex items-center gap-3 text-sm text-white/70">
+                    <div className="size-1.5 rounded-full bg-accent/40" />
+                    <code className="font-mono text-accent bg-accent/5 px-2 py-0.5 rounded">{constraint}</code>
                   </li>
                 ))}
               </ul>
             </div>
-          </div>
-        )}
-
-        {/* Test Cases Info */}
-        {problem.testCases && problem.testCases.length > 0 && (
-          <div className="bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/30 rounded-xl p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <CheckSquare className="w-6 h-6 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="text-sm font-bold text-primary mb-2">Testing Information</div>
-                <div className="text-sm text-base-content/80 leading-relaxed">
-                  Your solution will be evaluated against <strong className="text-primary">{problem.testCases.length}</strong> test case{problem.testCases.length !== 1 ? 's' : ''}. 
-                  Make sure your code handles all edge cases and meets the constraints.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tags */}
-        {problem.tags && problem.tags.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Tag className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-base-content">
-                Topics
-              </h2>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {problem.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-4 py-2 bg-base-200/60 text-base-content/90 rounded-lg text-sm font-semibold border-2 border-base-300 hover:border-primary hover:bg-base-200 transition-all cursor-pointer shadow-sm hover:shadow-md hover:scale-105"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
+          </section>
         )}
       </div>
     </div>
