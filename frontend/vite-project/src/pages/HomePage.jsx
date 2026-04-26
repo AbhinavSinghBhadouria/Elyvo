@@ -84,9 +84,9 @@ function HomePage() {
                                 <ArrowRight className="size-5 group-hover/btn:translate-x-1.5 transition-transform relative z-10" />
                             </button>
                         </SignInButton>
-                        <button className="w-full sm:w-auto px-10 py-6 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-bold text-base transition-all active:scale-95 flex items-center justify-center gap-4">
+                        <Link to="/demo" className="w-full sm:w-auto px-10 py-6 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-2xl font-bold text-base transition-all active:scale-95 flex items-center justify-center gap-4">
                             View Demo
-                        </button>
+                        </Link>
                     </div>
 
                     <div className="reveal pt-20">

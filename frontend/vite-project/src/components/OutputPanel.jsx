@@ -4,20 +4,18 @@ import { CheckCircle, XCircle, AlertCircle, Terminal, FileText } from 'lucide-re
 function OutputPanel({ output }) {
   if (!output) {
     return (
-      <div className="h-full bg-base-100 flex flex-col">
-        <div className="px-5 py-3 bg-base-200 border-b-2 border-base-300 flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-base-content/70" />
-          <span className="font-bold text-sm">Output</span>
+      <div className="h-full bg-[#020203] flex flex-col">
+        <div className="px-8 py-4 bg-white/[0.01] border-b border-white/5 flex items-center gap-3">
+          <Terminal className="size-4 text-slate-500" />
+          <span className="text-[10px] font-black uppercase tracking-premium text-slate-400">Execution Output</span>
         </div>
-        <div className="flex-1 overflow-auto p-6 flex items-center justify-center">
-          <div className="text-center">
-            <Terminal className="w-16 h-16 mx-auto mb-4 text-base-content/20" />
-            <p className="text-base-content/50 text-sm font-medium mb-2">
-              No output yet
-            </p>
-            <p className="text-base-content/40 text-xs">
-              Click "Run Code" to see the results
-            </p>
+        <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
+          <div className="size-16 rounded-2xl bg-white/[0.02] flex items-center justify-center border border-white/5 mb-6">
+            <Terminal className="size-8 text-slate-700" />
+          </div>
+          <div className="space-y-1">
+             <p className="text-sm font-bold text-slate-500">Awaiting Execution</p>
+             <p className="text-[10px] font-medium text-slate-600 uppercase tracking-widest">Submit code to see results</p>
           </div>
         </div>
       </div>
@@ -25,91 +23,82 @@ function OutputPanel({ output }) {
   }
 
   return (
-    <div className="h-full bg-base-100 flex flex-col">
-      {/* Enhanced Header */}
-      <div className="px-5 py-3 bg-base-200 border-b-2 border-base-300 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-base-content/70" />
-          <span className="font-bold text-sm">Output</span>
+    <div className="h-full bg-[#020203] flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="px-8 py-4 bg-white/[0.02] border-b border-white/5 flex items-center justify-between backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <Terminal className="size-4 text-blue-400" />
+          <span className="text-[10px] font-black uppercase tracking-premium text-white">Execution Output</span>
         </div>
         
         {output.success ? (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-success/20 text-success rounded-lg border border-success/30">
-            <CheckCircle className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wide">Success</span>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <CheckCircle className="size-3" />
+            <span className="text-[9px] font-black uppercase tracking-widest">Compiled</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-error/20 text-error rounded-lg border border-error/30">
-            <XCircle className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wide">Error</span>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400">
+            <XCircle className="size-3" />
+            <span className="text-[9px] font-black uppercase tracking-widest">Failed</span>
           </div>
         )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-5">
+      <div className="flex-1 overflow-auto custom-scrollbar p-8">
         {output.success ? (
-          <div className="space-y-5">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Test Results Summary */}
             {output.testResults && output.testResults.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-4 h-4 text-base-content/70" />
-                  <span className="text-xs font-bold text-base-content/70 uppercase tracking-wide">
-                    Test Results
-                  </span>
-                </div>
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                   <FileText className="size-3" />
+                   Validation Tests
+                </h4>
                 
-                <div className="space-y-2 mb-4">
+                <div className="grid grid-cols-1 gap-3">
                   {output.testResults.map((result, idx) => (
                     <div 
                       key={idx}
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
                         result.passed 
-                          ? 'bg-success/10 border-success/40 shadow-sm' 
-                          : 'bg-error/10 border-error/40 shadow-sm'
+                          ? 'bg-emerald-500/[0.03] border-emerald-500/20 shadow-sm' 
+                          : 'bg-rose-500/[0.03] border-rose-500/20 shadow-sm'
                       }`}
                     >
-                      <span className="font-semibold text-sm">Test Case {result.testCase}</span>
+                      <div className="flex items-center gap-3">
+                         <div className={`size-2 rounded-full ${result.passed ? 'bg-emerald-500' : 'bg-rose-500'} shadow-[0_0_10px] ${result.passed ? 'shadow-emerald-500/50' : 'shadow-rose-500/50'}`} />
+                         <span className="text-sm font-bold text-white/90 tracking-tight">Test Case {result.testCase}</span>
+                      </div>
                       <div className="flex items-center gap-2">
                         {result.passed ? (
-                          <>
-                            <CheckCircle className="w-5 h-5 text-success" />
-                            <span className="text-success font-bold text-sm">Passed</span>
-                          </>
+                          <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Passed</span>
                         ) : (
-                          <>
-                            <XCircle className="w-5 h-5 text-error" />
-                            <span className="text-error font-bold text-sm">Failed</span>
-                          </>
+                          <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Failed</span>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
                 
-                <div className="bg-base-200/50 rounded-lg p-3 border border-base-300">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-base-content/70">Total Score:</span>
-                    <span className="text-lg font-bold text-success">
+                <div className="p-5 rounded-2xl bg-white/[0.01] border border-white/5 flex items-center justify-between">
+                   <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Performance</span>
+                   <span className={`text-xl font-black ${output.testResults.every(r => r.passed) ? 'text-emerald-400' : 'text-amber-400'}`}>
                       {output.testResults.filter(r => r.passed).length} / {output.testResults.length}
-                    </span>
-                  </div>
+                   </span>
                 </div>
               </div>
             )}
 
             {/* Program Output */}
             {output.output && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Terminal className="w-4 h-4 text-base-content/70" />
-                  <span className="text-xs font-bold text-base-content/70 uppercase tracking-wide">
-                    Program Output
-                  </span>
-                </div>
-                <div className="bg-neutral rounded-lg p-4 border-2 border-success/30 shadow-inner">
-                  <pre className="text-sm font-mono text-success whitespace-pre-wrap break-words leading-relaxed">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                   <Terminal className="size-3" />
+                   Stdout
+                </h4>
+                <div className="bg-[#0a0a0f] rounded-2xl p-6 border border-white/5 shadow-inner">
+                  <pre className="text-sm font-mono text-emerald-400/90 whitespace-pre-wrap break-words leading-relaxed selection:bg-emerald-500/20">
                     {output.output}
                   </pre>
                 </div>
@@ -118,88 +107,56 @@ function OutputPanel({ output }) {
 
             {/* Expected Output */}
             {output.expectedOutput && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="w-4 h-4 text-base-content/70" />
-                  <span className="text-xs font-bold text-base-content/70 uppercase tracking-wide">
-                    Expected Output
-                  </span>
-                </div>
-                <div className="bg-neutral rounded-lg p-4 border-2 border-info/30 shadow-inner">
-                  <pre className="text-sm font-mono text-info whitespace-pre-wrap break-words leading-relaxed">
+              <div className="space-y-4">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                   <AlertCircle className="size-3" />
+                   Expected Baseline
+                </h4>
+                <div className="bg-[#0a0a0f] rounded-2xl p-6 border border-white/5">
+                  <pre className="text-sm font-mono text-blue-400/80 whitespace-pre-wrap break-words leading-relaxed selection:bg-blue-500/20">
                     {output.expectedOutput}
                   </pre>
                 </div>
               </div>
             )}
-
-            {/* Success Message */}
-            {!output.testResults && !output.expectedOutput && (
-              <div className="bg-success/10 border-2 border-success/30 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-6 h-6 text-success flex-shrink-0 mt-0.5" />
-                  <div>
-                    <div className="text-sm font-bold text-success mb-1">
-                      Execution Successful!
-                    </div>
-                    <div className="text-sm text-base-content/70">
-                      Your code ran without any errors.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Error Message */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <XCircle className="w-4 h-4 text-error" />
-                <span className="text-xs font-bold text-error uppercase tracking-wide">
-                  Error Details
-                </span>
-              </div>
-              <div className="bg-error/10 rounded-lg p-4 border-2 border-error/40 shadow-inner">
-                <pre className="text-sm font-mono text-error whitespace-pre-wrap break-words leading-relaxed">
+            <div className="space-y-4">
+               <h4 className="text-[10px] font-black uppercase tracking-widest text-rose-500 flex items-center gap-2">
+                   <XCircle className="size-3" />
+                   System Error
+                </h4>
+              <div className="bg-rose-500/5 rounded-2xl p-6 border border-rose-500/20">
+                <pre className="text-sm font-mono text-rose-400 whitespace-pre-wrap break-words leading-relaxed selection:bg-rose-500/20">
                   {output.error || 'An unknown error occurred'}
                 </pre>
               </div>
             </div>
 
-            {/* Partial Output */}
-            {output.output && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="w-4 h-4 text-warning" />
-                  <span className="text-xs font-bold text-warning uppercase tracking-wide">
-                    Partial Output (Before Error)
-                  </span>
-                </div>
-                <div className="bg-neutral rounded-lg p-4 border-2 border-warning/30 shadow-inner">
-                  <pre className="text-sm font-mono text-warning whitespace-pre-wrap break-words leading-relaxed">
-                    {output.output}
-                  </pre>
-                </div>
-              </div>
-            )}
-
-            {/* Help Message */}
-            <div className="bg-base-200/50 border border-base-300 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-info flex-shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-sm font-bold text-base-content mb-1">
-                    Debugging Tips:
+            {/* Tips */}
+            <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+               <div className="flex items-start gap-4">
+                  <AlertCircle className="size-5 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-3">
+                     <h5 className="text-sm font-bold text-amber-400">Refactoring Required</h5>
+                     <ul className="text-xs text-amber-400/70 space-y-2 list-none">
+                        <li className="flex items-center gap-2">
+                           <div className="size-1 rounded-full bg-amber-500/40" />
+                           Verify syntax integrity and closures
+                        </li>
+                        <li className="flex items-center gap-2">
+                           <div className="size-1 rounded-full bg-amber-500/40" />
+                           Check variable scope and definitions
+                        </li>
+                        <li className="flex items-center gap-2">
+                           <div className="size-1 rounded-full bg-amber-500/40" />
+                           Audit runtime logic and edge cases
+                        </li>
+                     </ul>
                   </div>
-                  <ul className="text-sm text-base-content/70 space-y-1 list-disc list-inside">
-                    <li>Check for syntax errors in your code</li>
-                    <li>Verify variable names and types</li>
-                    <li>Ensure proper input/output format</li>
-                    <li>Look for runtime exceptions in the error message</li>
-                  </ul>
-                </div>
-              </div>
+               </div>
             </div>
           </div>
         )}
