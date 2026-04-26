@@ -190,5 +190,4 @@ npm run dev
 ---
 
 <p align="center">
-  Built with ❤️ by the Elyvo Engineering Team.
 </p>
