@@ -15,6 +15,7 @@ import {
 import Navbar from "../components/Navbar";
 import { problemsApi } from "../api/problems";
 import { progressApi } from "../api/progress";
+import { PROBLEMS } from "../data/problems";
 
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
 
@@ -31,15 +32,24 @@ function ProblemsPage() {
       try {
         setLoading(true);
         const response = await problemsApi.getAllProblems();
-        const uniqueProblems = (response.problems || []).filter(
+        const apiProblems = response?.problems || [];
+        
+        let finalProblems = apiProblems.filter(
           (problem, index, self) =>
             index === self.findIndex(p => p.id === problem.id)
         );
-        setProblems(uniqueProblems);
+
+        // Fallback to static PROBLEMS if backend database has not seeded problems
+        if (finalProblems.length === 0) {
+          finalProblems = PROBLEMS;
+        }
+
+        setProblems(finalProblems);
         setError(null);
       } catch (err) {
-        setError("Failed to load problems. Please try again.");
-        console.error("Error fetching problems:", err);
+        console.warn("API fetch failed, falling back to static problems:", err);
+        setProblems(PROBLEMS);
+        setError(null);
       } finally {
         setLoading(false);
       }
