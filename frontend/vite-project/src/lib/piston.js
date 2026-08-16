@@ -25,21 +25,33 @@ using namespace std;
 };
 
 function addImportsIfMissing(language, code) {
-  const trimmedCode = code.trim();
+  let trimmedCode = code.trim();
 
   if (language === "java") {
     if (!/^\s*import\s+/m.test(trimmedCode)) {
-      return AUTO_IMPORTS.java + trimmedCode;
+      trimmedCode = AUTO_IMPORTS.java + trimmedCode;
+    }
+    if (!/public\s+static\s+void\s+main/m.test(trimmedCode)) {
+      trimmedCode += `\n\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println("Code compiled successfully.");\n  }\n}`;
     }
   }
 
   if (language === "cpp") {
     if (!/^\s*#include\s+/m.test(trimmedCode)) {
-      return AUTO_IMPORTS.cpp + trimmedCode;
+      trimmedCode = AUTO_IMPORTS.cpp + trimmedCode;
+    }
+    if (!/int\s+main\s*\(/m.test(trimmedCode)) {
+      trimmedCode += `\n\nint main() {\n    cout << "Code compiled successfully." << endl;\n    return 0;\n}`;
     }
   }
 
-  return code;
+  if (language === "c") {
+    if (!/int\s+main\s*\(/m.test(trimmedCode)) {
+      trimmedCode += `\n\nint main() {\n    printf("Code compiled successfully.\\n");\n    return 0;\n}`;
+    }
+  }
+
+  return trimmedCode;
 }
 
 /**
