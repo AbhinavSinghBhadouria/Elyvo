@@ -166,7 +166,7 @@ function ProblemsPage() {
 
       <div className="max-w-6xl mx-auto px-6 py-16 space-y-16">
         {/* HERO SECTION */}
-        <header className="reveal relative rounded-3xl border border-white/[0.05] bg-slate-900/20 overflow-hidden shadow-2xl">
+        <header className="relative rounded-3xl border border-white/[0.05] bg-slate-900/20 overflow-hidden shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-slate-600/10 opacity-40" />
           
           <div className="relative z-10 grid lg:grid-cols-[1fr_350px] gap-12 p-10 md:p-16 items-center">
@@ -192,7 +192,7 @@ function ProblemsPage() {
         </header>
 
         {/* CONTROLS */}
-        <section className="reveal flex flex-col md:flex-row gap-8 items-center justify-between">
+        <section className="flex flex-col md:flex-row gap-8 items-center justify-between">
           <div className="flex flex-wrap gap-3">
             {DIFFICULTIES.map((diff) => (
               <button
@@ -233,10 +233,10 @@ function ProblemsPage() {
                  <p className="text-slate-600 font-medium text-sm">No challenges found matching your criteria</p>
               </div>
             ) : (
-              filteredProblems.map((problem, i) => {
+              filteredProblems.map((problem) => {
                 const isSolved = solvedProblems.has(problem.id);
                 return (
-                  <div key={problem.id} className="reveal">
+                  <div key={problem.id}>
                     <Link
                         to={`/problem/${problem.id}`}
                         className={`group relative rounded-2xl p-8 border transition-all duration-300 block overflow-hidden ${
