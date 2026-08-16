@@ -48,6 +48,7 @@ function CodeEditorPanel({
   selectedLanguage,
   code,
   isRunning,
+  onLanguageChange,
   onCodeChange,
   onRunCode,
   onGetHint,
