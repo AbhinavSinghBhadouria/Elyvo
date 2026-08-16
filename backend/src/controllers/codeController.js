@@ -1,75 +1,75 @@
 // controllers/codeController.js
 import { ENV } from "../lib/env.js";
 
-// ─── Language config ───────────────────────────────────────────────────────────
+// ─── Language configuration ───────────────────────────────────────────────────
 
 // Judge0 language IDs (used when JUDGE0_API_URL is configured)
 const JUDGE0_LANGUAGE_ID_MAP = {
-  javascript: 63, // JavaScript (Node.js 12.14.0)
-  python: 71,     // Python (3.8.1)
-  java: 62,       // Java (OpenJDK 13.0.1)
-  cpp: 54,        // C++ (GCC 9.2.0)
-  c: 50,          // C (GCC 9.2.0)
+  javascript: 63, // Node.js 12.14.0
+  python: 71,     // Python 3.8.1
+  java: 62,       // Java 13.0.1
+  cpp: 54,        // C++ GCC 9.2.0
+  c: 50,          // C GCC 9.2.0
 };
 
-// Piston runtime identifiers (fallback — free, no key required)
-const PISTON_LANGUAGE_MAP = {
-  javascript: { language: "javascript", version: "18.15.0" },
-  python: { language: "python", version: "3.10.0" },
-  java: { language: "java", version: "15.0.2" },
-  cpp: { language: "c++", version: "10.2.0" },
-  c: { language: "c", version: "10.2.0" },
+// Wandbox compiler names per language (free, no auth required, works reliably)
+const WANDBOX_COMPILER_MAP = {
+  javascript: "nodejs-head",
+  python:     "cpython-3.12.3",
+  java:       "openjdk-head",
+  cpp:        "gcc-head",
+  c:          "gcc-head-c",
 };
 
-const PISTON_API = "https://emkc.org/api/v2/piston";
+// ─── Wandbox execution helper ─────────────────────────────────────────────────
 
-// ─── Piston execution helper ───────────────────────────────────────────────────
-
-async function runWithPiston(language, sourceCode, stdin) {
-  const config = PISTON_LANGUAGE_MAP[language];
-  if (!config) {
+async function runWithWandbox(language, sourceCode, stdin) {
+  const compiler = WANDBOX_COMPILER_MAP[language];
+  if (!compiler) {
     return { success: false, error: `Unsupported language: ${language}` };
   }
 
-  const response = await fetch(`${PISTON_API}/execute`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      language: config.language,
-      version: config.version,
-      files: [{ content: sourceCode }],
-      stdin: stdin ?? "",
-    }),
-  });
+  let response;
+  try {
+    response = await fetch("https://wandbox.org/api/compile.json", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        compiler,
+        code: sourceCode,
+        stdin: stdin ?? "",
+        "save": false,
+      }),
+    });
+  } catch (networkErr) {
+    return { success: false, error: `Wandbox network error: ${networkErr.message}` };
+  }
 
   if (!response.ok) {
-    const text = await response.text();
-    return { success: false, error: `Piston error ${response.status}: ${text}` };
+    const text = await response.text().catch(() => "");
+    return { success: false, error: `Wandbox error ${response.status}: ${text}` };
   }
 
   const data = await response.json();
-  const stdout = data.run?.stdout || "";
-  const stderr = data.run?.stderr || "";
-  const exitCode = data.run?.code;
 
-  // Compilation failure
-  if (data.compile && data.compile.code !== 0) {
-    return {
-      success: false,
-      output: "",
-      error: data.compile.stderr || data.compile.output || "Compilation failed",
-    };
+  // Wandbox status: 0 = OK, non-zero = runtime error
+  const compilerError = data.compiler_error || "";
+  const programOutput = data.program_output || "";
+  const programError  = data.program_error  || "";
+  const exitCode      = data.status;
+
+  if (compilerError) {
+    return { success: false, output: "", error: compilerError };
   }
 
-  // Runtime error
-  if (exitCode !== 0 && stderr) {
-    return { success: false, output: stdout, error: stderr };
+  if (exitCode !== 0 && programError) {
+    return { success: false, output: programOutput, error: programError };
   }
 
-  return { success: true, output: stdout.trim(), error: "" };
+  return { success: true, output: programOutput.trim(), error: "" };
 }
 
-// ─── Judge0 execution helper ───────────────────────────────────────────────────
+// ─── Judge0 execution helper ──────────────────────────────────────────────────
 
 async function runWithJudge0(language, sourceCode, stdin) {
   const languageId = JUDGE0_LANGUAGE_ID_MAP[language];
@@ -85,24 +85,25 @@ async function runWithJudge0(language, sourceCode, stdin) {
     headers["X-RapidAPI-Host"] = ENV.JUDGE0_API_HOST;
   }
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      language_id: languageId,
-      source_code: sourceCode,
-      stdin: stdin ?? "",
-    }),
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ language_id: languageId, source_code: sourceCode, stdin: stdin ?? "" }),
+    });
+  } catch (networkErr) {
+    return { success: false, error: `Judge0 network error: ${networkErr.message}` };
+  }
 
   if (!response.ok) {
-    const text = await response.text();
+    const text = await response.text().catch(() => "");
     return { success: false, error: `Judge0 error ${response.status}: ${text}` };
   }
 
   const result = await response.json();
   const status = result.status || {};
-  const isAccepted = status.id === 3; // 3 = Accepted
+  const isAccepted = status.id === 3;
   const stdout = result.stdout || "";
   const stderr = result.stderr || "";
   const compileOutput = result.compile_output || "";
@@ -118,17 +119,10 @@ async function runWithJudge0(language, sourceCode, stdin) {
     };
   }
 
-  return {
-    success: true,
-    output: stdout,
-    error: "",
-    time: result.time,
-    memory: result.memory,
-    status,
-  };
+  return { success: true, output: stdout, error: "", time: result.time, memory: result.memory, status };
 }
 
-// ─── Main handler ──────────────────────────────────────────────────────────────
+// ─── Main handler ─────────────────────────────────────────────────────────────
 
 export const runCode = async (req, res) => {
   try {
@@ -144,12 +138,19 @@ export const runCode = async (req, res) => {
     let result;
 
     if (ENV.JUDGE0_API_URL) {
-      // Use Judge0 when configured (supports RapidAPI or self-hosted)
+      // Priority 1: Judge0 (self-hosted or RapidAPI)
+      console.log("🔧 Using Judge0 for code execution");
       result = await runWithJudge0(language, sourceCode, stdin);
+
+      // If Judge0 itself failed (network / config error), fall through to Wandbox
+      if (!result.success && result.error?.includes("error")) {
+        console.warn("⚠️  Judge0 failed, falling back to Wandbox:", result.error);
+        result = await runWithWandbox(language, sourceCode, stdin);
+      }
     } else {
-      // Fallback: use the free public Piston API (no API key needed)
-      console.log("ℹ️  JUDGE0_API_URL not set — falling back to Piston API");
-      result = await runWithPiston(language, sourceCode, stdin);
+      // Priority 2: Wandbox (free, reliable, no API key needed)
+      console.log("ℹ️  JUDGE0_API_URL not set — using Wandbox for code execution");
+      result = await runWithWandbox(language, sourceCode, stdin);
     }
 
     return res.status(200).json(result);

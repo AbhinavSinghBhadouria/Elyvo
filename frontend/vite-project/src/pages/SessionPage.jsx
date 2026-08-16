@@ -2,14 +2,14 @@
 
 
 import { useUser } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEndSession, useJoinSession, useSessionById } from "../hooks/useSessions";
+import { useEndSession, useJoinSession, useSessionById, useUpdateSessionProblem } from "../hooks/useSessions";
 import { PROBLEMS } from "../data/problems";
 import Navbar from "../components/Navbar";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { getDifficultyBadgeClass } from "../lib/utils";
-import { Loader2Icon, LogOutIcon, PhoneOffIcon } from "lucide-react";
+import { Loader2Icon, LogOutIcon, PhoneOffIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-react";
 import CodeEditorPanel from "../components/CodeEditorPanel";
 import OutputPanel from "../components/OutputPanel";
 import { codeApi } from "../api/code";
@@ -27,6 +27,11 @@ function SessionPage() {
   const { user } = useUser();
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+
+  // Change Problem modal state (host only)
+  const [showChangeProblem, setShowChangeProblem] = useState(false);
+  const [problemSearch, setProblemSearch] = useState("");
+  const [selectedNewProblem, setSelectedNewProblem] = useState(null);
 
   // AI Assistant State
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -74,10 +79,22 @@ function SessionPage() {
 
   const joinSessionMutation = useJoinSession();
   const endSessionMutation = useEndSession();
+  const updateProblemMutation = useUpdateSessionProblem(id);
 
   const session = sessionData?.session;
   const isHost = session?.host?.clerkId === user?.id;
   const isParticipant = session?.participant?.clerkId === user?.id;
+
+  // Filtered problem list for the Change Problem modal
+  const filteredProblems = useMemo(() => {
+    const q = problemSearch.toLowerCase();
+    return PROBLEMS.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.difficulty.toLowerCase().includes(q) ||
+        (p.category || "").toLowerCase().includes(q)
+    ).slice(0, 50);
+  }, [problemSearch]);
 
   const { call, channel, chatClient, isInitializingCall, streamClient } = useStreamClient(
     session,
@@ -169,6 +186,25 @@ function SessionPage() {
     }
   };
 
+  const handleChangeProblem = async () => {
+    if (!selectedNewProblem) return;
+    try {
+      await updateProblemMutation.mutateAsync({
+        problem: selectedNewProblem.title,
+        difficulty: selectedNewProblem.difficulty,
+      });
+      // Reset editor to new problem's starter code
+      setCode(selectedNewProblem.starterCode?.[selectedLanguage] || "");
+      setOutput(null);
+      setShowChangeProblem(false);
+      setSelectedNewProblem(null);
+      setProblemSearch("");
+      toast.success(`Problem changed to "${selectedNewProblem.title}"`);
+    } catch (err) {
+      toast.error(err?.response?.data?.msg || "Failed to change problem");
+    }
+  };
+
   return (
     <div className="h-screen bg-[#03030b] text-white flex flex-col">
       <Navbar />
@@ -197,7 +233,7 @@ function SessionPage() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                       <div className="flex items-center gap-3">
                         <span
                           className={`badge badge-lg ${getDifficultyBadgeClass(
                             session?.difficulty
@@ -206,19 +242,32 @@ function SessionPage() {
                           {session?.difficulty.slice(0, 1).toUpperCase() +
                             session?.difficulty.slice(1) || "Easy"}
                         </span>
+                        {/* ── Host admin controls ── */}
                         {isHost && session?.status === "active" && (
-                          <button
-                            onClick={handleEndSession}
-                            disabled={endSessionMutation.isPending}
-                            className="btn btn-error btn-sm gap-2"
-                          >
-                            {endSessionMutation.isPending ? (
-                              <Loader2Icon className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <LogOutIcon className="w-4 h-4" />
-                            )}
-                            End Session
-                          </button>
+                          <>
+                            {/* Change Problem button */}
+                            <button
+                              onClick={() => setShowChangeProblem(true)}
+                              className="btn btn-outline btn-sm gap-2"
+                              title="Change the active problem (host only)"
+                            >
+                              <RefreshCwIcon className="w-4 h-4" />
+                              Change Problem
+                            </button>
+                            {/* End Session button */}
+                            <button
+                              onClick={handleEndSession}
+                              disabled={endSessionMutation.isPending}
+                              className="btn btn-error btn-sm gap-2"
+                            >
+                              {endSessionMutation.isPending ? (
+                                <Loader2Icon className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <LogOutIcon className="w-4 h-4" />
+                              )}
+                              End Session
+                            </button>
+                          </>
                         )}
                         {session?.status === "completed" && (
                           <span className="badge badge-ghost badge-lg">Completed</span>
@@ -369,6 +418,96 @@ function SessionPage() {
         content={aiModalContent}
         isLoading={aiIsLoading}
       />
+
+      {/* ── Change Problem Modal (host only) ── */}
+      {showChangeProblem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[80vh] border border-base-300">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-base-300">
+              <div>
+                <h2 className="text-xl font-bold text-base-content">Change Problem</h2>
+                <p className="text-sm text-base-content/60 mt-0.5">Select a new problem. Participant will auto-refresh.</p>
+              </div>
+              <button
+                onClick={() => { setShowChangeProblem(false); setSelectedNewProblem(null); setProblemSearch(""); }}
+                className="btn btn-ghost btn-sm btn-circle"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="p-4 border-b border-base-300">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40" />
+                <input
+                  type="text"
+                  placeholder="Search by title, difficulty, or category..."
+                  value={problemSearch}
+                  onChange={(e) => setProblemSearch(e.target.value)}
+                  className="input input-bordered w-full pl-10 text-sm"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Problem list */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {filteredProblems.map((problem) => (
+                <button
+                  key={problem.id}
+                  onClick={() => setSelectedNewProblem(problem)}
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                    selectedNewProblem?.id === problem.id
+                      ? "border-primary bg-primary/10"
+                      : "border-base-300 hover:border-base-content/30 hover:bg-base-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-sm text-base-content truncate">{problem.title}</span>
+                    <span className={`badge badge-sm flex-shrink-0 ${
+                      problem.difficulty === "Easy" ? "badge-success" :
+                      problem.difficulty === "Medium" ? "badge-warning" : "badge-error"
+                    }`}>{problem.difficulty}</span>
+                  </div>
+                  {problem.category && (
+                    <p className="text-xs text-base-content/50 mt-0.5">{problem.category}</p>
+                  )}
+                </button>
+              ))}
+              {filteredProblems.length === 0 && (
+                <p className="text-center text-sm text-base-content/40 py-8">No problems found</p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-base-300 flex items-center justify-between gap-3">
+              <span className="text-sm text-base-content/60">
+                {selectedNewProblem ? (
+                  <>Selected: <strong className="text-base-content">{selectedNewProblem.title}</strong></>
+                ) : "No problem selected"}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setShowChangeProblem(false); setSelectedNewProblem(null); setProblemSearch(""); }}
+                  className="btn btn-ghost btn-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleChangeProblem}
+                  disabled={!selectedNewProblem || updateProblemMutation.isPending}
+                  className="btn btn-primary btn-sm gap-2"
+                >
+                  {updateProblemMutation.isPending && <Loader2Icon className="w-3 h-3 animate-spin" />}
+                  Confirm Change
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

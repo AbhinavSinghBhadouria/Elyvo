@@ -58,8 +58,19 @@ export async function createSession(req,res){
 
 export async function getActiveSessions(req,res){
     try{
-        // FIXED: Changed EmailAddress to email
-        const sessions = await Session.find({status: "active"})
+        const userId = req.user._id;
+
+        // Privacy filter:
+        // - Public sessions (no password) are visible to everyone
+        // - Private sessions (has password) are ONLY visible to their host or participant
+        const sessions = await Session.find({
+            status: "active",
+            $or: [
+                { password: "" },              // public: no password set
+                { host: userId },              // always show host their own private room
+                { participant: userId },       // always show participant their joined room
+            ]
+        })
             .populate("host", "name profileImage email clerkId")
             .sort({createdAt: -1})
             .limit(20);
@@ -224,5 +235,44 @@ export async function endSession(req,res){
     catch(error){
         console.log("Error in endSession controller:", error.message);
         res.status(500).json({msg: "Internal Server Error"});
+    }
+}
+
+/**
+ * PATCH /api/sessions/:id/problem
+ * Only the host (admin) may change the active problem during a session.
+ * Body: { problem: string, difficulty: string }
+ */
+export async function updateSessionProblem(req, res) {
+    try {
+        const { id } = req.params;
+        const userId = req.user._id;
+        const { problem, difficulty } = req.body;
+
+        if (!problem || !difficulty) {
+            return res.status(400).json({ msg: "Both problem and difficulty are required" });
+        }
+
+        const session = await Session.findById(id);
+        if (!session) return res.status(404).json({ msg: "Session not found" });
+
+        // Only the host can change the problem
+        const hostId = session.host.toString();
+        if (hostId !== userId.toString()) {
+            return res.status(403).json({ msg: "Only the host can change the problem" });
+        }
+
+        if (session.status !== "active") {
+            return res.status(400).json({ msg: "Cannot modify a completed session" });
+        }
+
+        session.problem = problem;
+        session.difficulty = difficulty;
+        await session.save();
+
+        res.status(200).json({ session, msg: `Problem changed to "${problem}"` });
+    } catch (error) {
+        console.log("Error in updateSessionProblem controller:", error.message);
+        res.status(500).json({ msg: "Internal Server Error" });
     }
 }

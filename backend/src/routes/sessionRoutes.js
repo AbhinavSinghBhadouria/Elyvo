@@ -1,6 +1,15 @@
 import express from "express";
 import { protectionRoute } from "../middleware/protectRoute.js";
-import { createSession, getActiveSessions, getMyRecentSessions, getSessionById, joinSession, endSession, joinSessionByCode } from "../controllers/SessionController.js";
+import {
+  createSession,
+  getActiveSessions,
+  getMyRecentSessions,
+  getSessionById,
+  joinSession,
+  endSession,
+  joinSessionByCode,
+  updateSessionProblem,
+} from "../controllers/SessionController.js";
 
 const app = express();
 
@@ -12,5 +21,8 @@ app.get("/:id", protectionRoute, getSessionById);
 
 app.post("/:id/join", protectionRoute, joinSession);
 app.post("/:id/end", protectionRoute, endSession);
+
+// Admin (host) only: change the problem mid-session
+app.patch("/:id/problem", protectionRoute, updateSessionProblem);
 
 export default app;
