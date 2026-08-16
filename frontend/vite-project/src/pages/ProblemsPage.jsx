@@ -14,6 +14,7 @@ import {
 
 import Navbar from "../components/Navbar";
 import { problemsApi } from "../api/problems";
+import { progressApi } from "../api/progress";
 
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
 
@@ -44,16 +45,28 @@ function ProblemsPage() {
       }
     };
 
-    fetchProblems();
-
-    const saved = localStorage.getItem('solvedProblems');
-    if (saved) {
+    const fetchProgress = async () => {
       try {
-        setSolvedProblems(new Set(JSON.parse(saved)));
-      } catch (e) {
-        console.error('Error loading solved problems:', e);
+        // Load progress from backend (requires auth)
+        const { progress } = await progressApi.getUserProgress();
+        const solvedIds = (progress || [])
+          .filter(p => p.solved)
+          .map(p => p.problemId);
+        setSolvedProblems(new Set(solvedIds));
+        // Mirror to localStorage so Navbar badge updates
+        localStorage.setItem('solvedProblems', JSON.stringify(solvedIds));
+        window.dispatchEvent(new Event('solvedProblemsUpdated'));
+      } catch {
+        // Fallback to localStorage if user is not logged in
+        const saved = localStorage.getItem('solvedProblems');
+        if (saved) {
+          try { setSolvedProblems(new Set(JSON.parse(saved))); } catch {}
+        }
       }
-    }
+    };
+
+    fetchProblems();
+    fetchProgress();
 
     const observer = new IntersectionObserver(
         (entries) => {
@@ -70,18 +83,28 @@ function ProblemsPage() {
     elements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [loading]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const toggleSolved = (problemId) => {
+  const toggleSolved = async (problemId) => {
     const updated = new Set(solvedProblems);
-    if (updated.has(problemId)) {
-      updated.delete(problemId);
-    } else {
+    const isNowSolved = !updated.has(problemId);
+    if (isNowSolved) {
       updated.add(problemId);
+    } else {
+      updated.delete(problemId);
     }
     setSolvedProblems(updated);
-    localStorage.setItem('solvedProblems', JSON.stringify([...updated]));
+    // Mirror to localStorage for Navbar badge
+    const idsArray = [...updated];
+    localStorage.setItem('solvedProblems', JSON.stringify(idsArray));
     window.dispatchEvent(new Event('solvedProblemsUpdated'));
+    // Sync to backend
+    try {
+      await progressApi.saveProblemProgress(problemId, { solved: isNowSolved });
+    } catch {
+      // Non-critical: progress will still reflect locally
+    }
   };
 
   const difficultyStats = useMemo(

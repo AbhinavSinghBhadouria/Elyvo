@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { problemsApi } from '../api/problems';
+import { progressApi } from '../api/progress';
 import Navbar from '../components/Navbar';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import OutputPanel from '../components/OutputPanel';
@@ -81,6 +82,8 @@ function ProblemDetailPage() {
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [loading, setLoading] = useState(true);
+  // savedCode: { language -> code } loaded from backend per problem
+  const savedCodeRef = useRef({});
 
   // AI Assistant State
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -128,21 +131,31 @@ function ProblemDetailPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [problemsResponse, problemResponse] = await Promise.all([
+        const problemId = id;
+
+        const [problemsResponse, problemResponse, progressResponse] = await Promise.all([
           problemsApi.getAllProblems(),
-          id ? problemsApi.getProblemById(id) : null
+          problemId ? problemsApi.getProblemById(problemId) : null,
+          // Silently load saved code (ignores 401 if not logged in)
+          problemId ? progressApi.getProblemProgress(problemId).catch(() => null) : null,
         ]);
 
         const problems = problemsResponse?.problems || [];
         setAllProblems(problems);
 
-        if (problemResponse) {
-          setCurrentProblem(problemResponse);
-          setCode(problemResponse.starterCode?.[selectedLanguage] || '');
-        } else if (problems.length > 0) {
-          const defaultProblem = problems[0];
-          setCurrentProblem(defaultProblem);
-          setCode(defaultProblem.starterCode?.[selectedLanguage] || '');
+        // Store saved code map for this problem
+        const savedCode = progressResponse?.progress?.code || {};
+        savedCodeRef.current = savedCode;
+
+        const activeProblem = problemResponse || (problems.length > 0 ? problems[0] : null);
+        if (activeProblem) {
+          setCurrentProblem(activeProblem);
+          // Use saved code if available for the current language, else starter code
+          const restoredCode =
+            savedCode[selectedLanguage] ||
+            activeProblem.starterCode?.[selectedLanguage] ||
+            '';
+          setCode(restoredCode);
         }
       } catch (error) {
         console.error('Error loading problems:', error);
@@ -153,12 +166,18 @@ function ProblemDetailPage() {
     };
 
     loadData();
-  }, [id, selectedLanguage]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleLanguageChange = (lang) => {
     setSelectedLanguage(lang);
     if (currentProblem) {
-      setCode(currentProblem.starterCode?.[newLang] || '');
+      // Use saved code for this language if available, else starter code
+      const restored =
+        savedCodeRef.current[lang] ||
+        currentProblem.starterCode?.[lang] ||
+        '';
+      setCode(restored);
     }
     setOutput(null);
   };
@@ -262,22 +281,41 @@ function ProblemDetailPage() {
           triggerConfetti();
           toast.success('🎉 Test case passed!', {
             duration: 4000,
-            style: {
-              background: '#10b981',
-              color: '#fff',
-            }
+            style: { background: '#10b981', color: '#fff' },
           });
+          // ✅ Persist solved status + latest code to the database
+          if (currentProblem?.id) {
+            progressApi
+              .saveProblemProgress(currentProblem.id, {
+                solved: true,
+                code,
+                language: selectedLanguage,
+              })
+              .then(() => {
+                savedCodeRef.current[selectedLanguage] = code;
+                // Notify Navbar to refresh solved count
+                window.dispatchEvent(new Event('solvedProblemsUpdated'));
+              })
+              .catch(() => {});
+          }
         } else {
           toast.error('Wrong Answer - Check the expected output', {
-            duration: 4000
+            duration: 4000,
           });
         }
       } else {
         toast.success('Code executed successfully!');
+        // Save latest code even if no expected output
+        if (currentProblem?.id) {
+          progressApi
+            .saveProblemProgress(currentProblem.id, { code, language: selectedLanguage })
+            .then(() => { savedCodeRef.current[selectedLanguage] = code; })
+            .catch(() => {});
+        }
       }
     } else {
       toast.error(result.error || 'Compilation Error or Runtime Error', {
-        duration: 5000
+        duration: 5000,
       });
     }
   };

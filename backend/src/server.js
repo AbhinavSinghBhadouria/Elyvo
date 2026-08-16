@@ -16,6 +16,7 @@ import problemRoutes from "./routes/problemRoutes.js";
 import codeRoutes from "./routes/codeRoutes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import progressRoutes from "./routes/progressRoutes.js";
 
 const app = express();
 const MODE = ENV.NODE_ENV || process.env.NODE_ENV || 'development';
@@ -53,6 +54,7 @@ app.use("/api/sessions", sessionRoutes);
 app.use("/api/code", codeRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/progress", progressRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
