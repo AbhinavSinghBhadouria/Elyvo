@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useUser } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
@@ -13,7 +13,8 @@ import RecentSessions from "../components/RecentSessions";
 import CreateSessionModal from "../components/CreateSessionModal";
 import JoinByCodeModal from "../components/JoinByCodeModal";
 import DailyRoast from "../components/DailyRoast";
-import { ShieldCheck, Target, Sparkles, Zap, BrainCircuit, TrendingUp } from "lucide-react";
+import { COMPANIES } from "../data/companies";
+import { ShieldCheck, Target, Sparkles, Zap, BrainCircuit, TrendingUp, Building2, ChevronRight } from "lucide-react";
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -156,6 +157,37 @@ function DashboardPage() {
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No Active Goals</p>
                 </div>
               )}
+            </div>
+
+            {/* Company Interview Guides Widget */}
+            <div className="p-8 rounded-[2.5rem] premium-glass premium-border-glow relative overflow-hidden group transition-all duration-500 hover:scale-[1.01]">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3 text-cyan-400">
+                  <div className="size-8 rounded-lg bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                    <Building2 className="size-4" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-premium">Target Hiring</span>
+                </div>
+                <Link to="/companies" className="text-xs font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+                  All <ChevronRight className="size-3" />
+                </Link>
+              </div>
+              <h3 className="text-2xl font-extrabold mb-2 tracking-tight text-white">Company Guides</h3>
+              <p className="text-slate-400 text-xs leading-relaxed mb-6 font-medium">
+                Preparation roadmaps & hiring rounds for EPAM, TCS, Cognizant, LTIMindtree & more.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {COMPANIES.slice(0, 4).map((c) => (
+                  <Link
+                    key={c.id}
+                    to={`/companies/${c.id}`}
+                    className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-cyan-500/30 hover:bg-white/10 transition-all block group"
+                  >
+                    <p className="text-xs font-bold text-white group-hover:text-cyan-400">{c.name}</p>
+                    <p className="text-[10px] text-slate-500">{c.type}</p>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {/* AI Roast Section */}

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { problemsApi } from '../api/problems';
 import { progressApi } from '../api/progress';
+import { PROBLEMS } from '../data/problems';
 import Navbar from '../components/Navbar';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import OutputPanel from '../components/OutputPanel';
@@ -134,20 +135,21 @@ function ProblemDetailPage() {
         const problemId = id;
 
         const [problemsResponse, problemResponse, progressResponse] = await Promise.all([
-          problemsApi.getAllProblems(),
-          problemId ? problemsApi.getProblemById(problemId) : null,
-          // Silently load saved code (ignores 401 if not logged in)
+          problemsApi.getAllProblems().catch(() => ({ problems: [] })),
+          problemId ? problemsApi.getProblemById(problemId).catch(() => null) : null,
           problemId ? progressApi.getProblemProgress(problemId).catch(() => null) : null,
         ]);
 
-        const problems = problemsResponse?.problems || [];
+        let problems = problemsResponse?.problems || [];
+        if (problems.length === 0) problems = PROBLEMS;
+
         setAllProblems(problems);
 
-        // Store saved code map for this problem
         const savedCode = progressResponse?.progress?.code || {};
         savedCodeRef.current = savedCode;
 
-        const activeProblem = problemResponse || (problems.length > 0 ? problems[0] : null);
+        const staticFallback = PROBLEMS.find((p) => p.id === problemId);
+        const activeProblem = problemResponse || staticFallback || (problems.length > 0 ? problems[0] : null);
         if (activeProblem) {
           setCurrentProblem(activeProblem);
           // Use saved code if available for the current language, else starter code
@@ -184,12 +186,18 @@ function ProblemDetailPage() {
 
   const handleProblemChange = async (newProblemId) => {
     try {
-      const problemResponse = await problemsApi.getProblemById(newProblemId);
+      let problemResponse = await problemsApi.getProblemById(newProblemId).catch(() => null);
+      if (!problemResponse) {
+        problemResponse = PROBLEMS.find((p) => p.id === newProblemId);
+      }
+      if (!problemResponse) {
+        toast.error('Problem not found');
+        return;
+      }
       setCurrentProblem(problemResponse);
       setCode(problemResponse.starterCode?.[selectedLanguage] || '');
       setOutput(null);
       navigate(`/problem/${newProblemId}`);
-      console.log('✅ Changed to problem:', problemResponse.title);
     } catch (error) {
       console.error('Error loading problem:', error);
       toast.error('Failed to load problem');
@@ -257,6 +265,10 @@ function ProblemDetailPage() {
     return String(testInput);
   };
 
+  const getExpectedOutput = (testCase) => {
+    return testCase.expectedOutput ?? testCase.output ?? '';
+  };
+
   const handleRunCode = async () => {
     if (!currentProblem?.testCases || currentProblem.testCases.length === 0) {
       toast.error('No test cases available for this problem');
@@ -266,66 +278,87 @@ function ProblemDetailPage() {
     setIsRunning(true);
     setOutput(null);
 
-    const testCase = currentProblem.testCases[0];
-    const stdin = formatInputForStdin(testCase.input);
+    const testCases = currentProblem.testCases;
+    const testResults = [];
+    let lastResult = null;
+    let allPassed = true;
 
-    const result = await executeCode(selectedLanguage, code, stdin);
-    setOutput(result);
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
+      const expectedOutput = getExpectedOutput(testCase);
+      const stdin = formatInputForStdin(testCase.input);
+
+      const result = await executeCode(selectedLanguage, code, stdin);
+      lastResult = result;
+
+      if (!result.success) {
+        allPassed = false;
+        testResults.push({ testCase: i + 1, passed: false });
+        setOutput({ ...result, testResults });
+        setIsRunning(false);
+        toast.error(result.error || 'Compilation Error or Runtime Error', { duration: 5000 });
+        return;
+      }
+
+      const passed = expectedOutput
+        ? checkIfTestsPassed(result.output, expectedOutput)
+        : true;
+
+      testResults.push({ testCase: i + 1, passed });
+      if (!passed) allPassed = false;
+    }
+
+    const lastExpected = getExpectedOutput(testCases[testCases.length - 1]);
+    setOutput({
+      ...lastResult,
+      testResults,
+      expectedOutput: lastExpected,
+    });
     setIsRunning(false);
 
-    if (result.success) {
-      const expectedOutput = testCase.expectedOutput;
-      if (expectedOutput) {
-        const testsPassed = checkIfTestsPassed(result.output, expectedOutput);
-        if (testsPassed) {
-          triggerConfetti();
-          toast.success('🎉 Test case passed!', {
-            duration: 4000,
-            style: { background: '#10b981', color: '#fff' },
-          });
-          // ✅ Persist solved status + latest code to the database
-          if (currentProblem?.id) {
-            progressApi
-              .saveProblemProgress(currentProblem.id, {
-                solved: true,
-                code,
-                language: selectedLanguage,
-              })
-              .then(() => {
-                savedCodeRef.current[selectedLanguage] = code;
-                // Notify Navbar to refresh solved count
-                window.dispatchEvent(new Event('solvedProblemsUpdated'));
-              })
-              .catch(() => {});
-          }
-        } else {
-          toast.error('Wrong Answer - Check the expected output', {
-            duration: 4000,
-          });
-        }
-      } else {
-        toast.success('Code executed successfully!');
-        // Save latest code even if no expected output
-        if (currentProblem?.id) {
-          progressApi
-            .saveProblemProgress(currentProblem.id, { code, language: selectedLanguage })
-            .then(() => { savedCodeRef.current[selectedLanguage] = code; })
-            .catch(() => {});
-        }
+    if (allPassed) {
+      triggerConfetti();
+      toast.success(`🎉 All ${testCases.length} test case(s) passed!`, {
+        duration: 4000,
+        style: { background: '#10b981', color: '#fff' },
+      });
+      if (currentProblem?.id) {
+        progressApi
+          .saveProblemProgress(currentProblem.id, {
+            solved: true,
+            code,
+            language: selectedLanguage,
+          })
+          .then(() => {
+            savedCodeRef.current[selectedLanguage] = code;
+            const saved = localStorage.getItem('solvedProblems');
+            let solved = saved ? JSON.parse(saved) : [];
+            if (!solved.includes(currentProblem.id)) {
+              solved.push(currentProblem.id);
+              localStorage.setItem('solvedProblems', JSON.stringify(solved));
+            }
+            window.dispatchEvent(new Event('solvedProblemsUpdated'));
+          })
+          .catch(() => {});
       }
     } else {
-      toast.error(result.error || 'Compilation Error or Runtime Error', {
-        duration: 5000,
-      });
+      const passedCount = testResults.filter(r => r.passed).length;
+      toast.error(`${passedCount}/${testCases.length} test cases passed`, { duration: 4000 });
+      if (currentProblem?.id) {
+        progressApi
+          .saveProblemProgress(currentProblem.id, { code, language: selectedLanguage })
+          .then(() => { savedCodeRef.current[selectedLanguage] = code; })
+          .catch(() => {});
+      }
     }
   };
 
   if (loading) {
     return (
-      <div className="h-screen bg-base-100 flex items-center justify-center">
+      <div className="h-screen bg-[var(--bg-main)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="loading loading-spinner loading-lg text-primary"></div>
-          <p className="text-lg font-medium">Loading problem...</p>
+          <div className="spinner" />
+          <p className="text-lg font-medium text-slate-400">Loading problem...</p>
         </div>
       </div>
     );
@@ -333,11 +366,14 @@ function ProblemDetailPage() {
 
   if (!currentProblem) {
     return (
-      <div className="h-screen bg-base-100 flex items-center justify-center">
+      <div className="h-screen bg-[var(--bg-main)] flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😕</div>
-          <h2 className="text-2xl font-bold mb-4">Problem not found</h2>
-          <button onClick={() => navigate('/problems')} className="btn btn-primary">
+          <h2 className="text-2xl font-bold mb-4 text-white">Problem not found</h2>
+          <button
+            onClick={() => navigate('/problems')}
+            className="px-6 py-3 rounded-xl bg-violet-600 text-white font-bold hover:bg-violet-500 transition-colors"
+          >
             Back to Problems
           </button>
         </div>
@@ -346,15 +382,15 @@ function ProblemDetailPage() {
   }
 
   return (
-    <div className="h-screen bg-base-100 flex flex-col">
+    <div className="h-screen bg-[var(--bg-main)] flex flex-col">
       <Navbar />
 
-      {/* Enhanced Language Selector Toolbar */}
-      <div className="bg-base-200 border-b-2 border-base-300 px-6 py-3.5 shadow-sm">
+      {/* Language Selector Toolbar */}
+      <div className="bg-[#14141d] border-b border-white/5 px-6 py-3">
         <div className="flex items-center justify-between max-w-full">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-bold text-base-content uppercase tracking-wider">
-              Select Language
+            <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+              Language
             </span>
             <div className="flex gap-2 flex-wrap">
               {Object.entries(LANGUAGE_CONFIG).map(([lang, config]) => (
@@ -362,29 +398,22 @@ function ProblemDetailPage() {
                   key={lang}
                   onClick={() => handleLanguageChange(lang)}
                   className={`
-                    flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-200
-                    border-2 font-semibold text-sm
-                    ${selectedLanguage === lang 
-                      ? `${config.bgColor} ${config.textColor} ${config.borderColor} shadow-lg scale-105 ring-2 ring-offset-2 ring-offset-base-200` 
-                      : `bg-base-100 border-base-300 text-base-content/70 ${config.hoverBg} hover:border-base-400 hover:shadow-md hover:scale-102`
+                    flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200
+                    border text-sm font-semibold
+                    ${selectedLanguage === lang
+                      ? 'bg-violet-500/10 border-violet-500/30 text-violet-300 shadow-lg'
+                      : 'bg-white/[0.03] border-white/10 text-slate-400 hover:text-white hover:border-white/20'
                     }
                   `}
                   title={`Switch to ${config.name}`}
                 >
-                  <img 
-                    src={config.logo} 
+                  <img
+                    src={config.logo}
                     alt={`${config.name} logo`}
-                    className="w-5 h-5 object-contain"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
+                    className="w-4 h-4 object-contain"
+                    onError={(e) => { e.target.style.display = 'none'; }}
                   />
                   <span>{config.name}</span>
-                  {selectedLanguage === lang && (
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
                 </button>
               ))}
             </div>
@@ -394,7 +423,6 @@ function ProblemDetailPage() {
 
       <div className="flex-1 overflow-hidden">
         <PanelGroup direction="horizontal">
-          {/* Left panel - Problem Description */}
           <Panel defaultSize={40} minSize={30}>
             <ProblemDescription
               problem={currentProblem}
@@ -404,12 +432,10 @@ function ProblemDetailPage() {
             />
           </Panel>
 
-          <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
+          <PanelResizeHandle className="w-1.5 bg-white/5 hover:bg-violet-500/50 transition-colors cursor-col-resize" />
 
-          {/* Right panel - Code Editor & Output */}
           <Panel defaultSize={60} minSize={30}>
             <PanelGroup direction="vertical">
-              {/* Top panel - Code Editor */}
               <Panel defaultSize={70} minSize={30}>
                 <CodeEditorPanel
                   selectedLanguage={selectedLanguage}
@@ -423,9 +449,8 @@ function ProblemDetailPage() {
                 />
               </Panel>
 
-              <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
+              <PanelResizeHandle className="h-1.5 bg-white/5 hover:bg-violet-500/50 transition-colors cursor-row-resize" />
 
-              {/* Bottom panel - Output */}
               <Panel defaultSize={30} minSize={20}>
                 <OutputPanel output={output} />
               </Panel>

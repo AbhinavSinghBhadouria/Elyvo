@@ -135,6 +135,7 @@ function CodeEditorPanel({
           </button>
           
           <button 
+             onClick={handleReset}
              className="p-2.5 rounded-xl hover:bg-white/5 text-white/40 hover:text-white/80 transition-all"
              title="Reset Code"
           >

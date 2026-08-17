@@ -146,7 +146,8 @@ function ProblemsPage() {
       const matchesQuery =
         query.trim().length === 0 ||
         problem.title.toLowerCase().includes(query.toLowerCase()) ||
-        problem.category.toLowerCase().includes(query.toLowerCase());
+        problem.category.toLowerCase().includes(query.toLowerCase()) ||
+        problem.tags?.some(t => t.toLowerCase().includes(query.toLowerCase()));
       return matchesDifficulty && matchesQuery;
     });
   }, [difficulty, problems, query]);
@@ -213,11 +214,37 @@ function ProblemsPage() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search challenges..."
+              placeholder="Search challenges or company (#EPAM, #TCS)..."
               className="w-full pl-12 pr-6 py-3 rounded-xl bg-white/5 border border-white/5 focus:outline-none focus:border-blue-500/40 text-sm transition-all font-medium"
             />
           </div>
         </section>
+
+        {/* COMPANY TAG FILTERS */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mr-2">Company Prep:</span>
+          {["EPAM", "TCS", "Cognizant", "LTIMindtree", "Infosys", "Wipro", "Accenture"].map((comp) => (
+            <button
+              key={comp}
+              onClick={() => setQuery(query.toLowerCase() === comp.toLowerCase() ? "" : comp)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
+                query.toLowerCase() === comp.toLowerCase()
+                  ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-sm"
+                  : "bg-white/5 border-white/5 text-slate-400 hover:text-white hover:border-white/10"
+              }`}
+            >
+              #{comp}
+            </button>
+          ))}
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="text-xs text-rose-400 hover:text-rose-300 font-medium ml-2 underline underline-offset-2"
+            >
+              Reset
+            </button>
+          )}
+        </div>
 
         {/* MAIN LIST */}
         <main className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
