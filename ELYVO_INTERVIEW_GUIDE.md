@@ -1,254 +1,250 @@
-# 🚀 Elyvo Complete Interview & Technical Guide
+# 🏆 EPAM Systems Ultimate Technical & Behavioral Prep Guide
 
-Welcome to the comprehensive **Elyvo Interview & Technical Guide**. This document synthesizes full system design specifications, administrative operation guidelines, core application workflows, database schemas, and technical interview platform architecture for Elyvo V2.0.
+This guide is designed to help you ace your **EPAM Systems** technical interviews by drawing direct, deep connections to the architectural patterns, challenges, and implementation details of **Elyvo**. 
+
+EPAM interviews evaluate candidate proficiency on three pillars: **Optimal DSA Problem Solving**, **System Architecture / Clean Code**, and **Situational Behavioral Scenarios**. This document prepares you to master all three.
 
 ---
 
 ## 📋 Table of Contents
-1. [Overview & Core Value Proposition](#-overview--core-value-proposition)
-2. [Tech Stack & System Architecture](#-tech-stack--system-architecture)
-3. [Interview Session & Handshake Protocol](#-interview-session--handshake-protocol)
-4. [AI Diagnostics & Co-pilot Engine](#-ai-diagnostics--co-pilot-engine)
-5. [Backend Middleware & Authentication Pipeline](#-backend-middleware--authentication-pipeline)
-6. [Administration & Content Management Guide](#-administration--content-management-guide)
-7. [Database Schema & Problem Catalog Specification](#-database-schema--problem-catalog-specification)
-8. [Setup, Execution & Environment Configuration](#-setup-execution--environment-configuration)
+1. [EPAM Interview Process & Core Values](#1-epam-interview-process--core-values)
+2. [Deep Dive: EPAM DSA Challenge Catalog from Elyvo](#2-deep-dive-epam-dsa-challenge-catalog-from-elyvo)
+   * [Binary Tree Level Order Traversal](#binary-tree-level-order-traversal)
+   * [Merge Intervals](#merge-intervals)
+   * [Number of Islands](#number-of-islands)
+   * [Longest Substring Without Repeating Characters](#longest-substring-without-repeating-characters)
+3. [System Design Case Study: Elyvo Architecture](#3-system-design-case-study-elyvo-architecture)
+   * [Real-Time IDE Workspace Sync](#real-time-ide-workspace-sync)
+   * [Audio, Video & Chat Telemetry Integration](#audio-video--chat-telemetry-integration)
+   * [Sandboxed Execution Engine Pattern](#sandboxed-execution-engine-pattern)
+   * [Identity Federation & Secure Route Middleware](#identity-federation--secure-route-middleware)
+4. [EPAM Situational & Behavioral Questions (STAR Method)](#4-epam-situational--behavioral-questions-star-method)
+   * [Dealing with Legacy API / Dependency Failures](#scenario-1-dealing-with-legacy-api--dependency-failures)
+   * [Handling High Latency / Synchronization Tradeoffs](#scenario-2-handling-high-latency--synchronization-tradeoffs)
+   * [Managing Ambiguous Product Architecture Requests](#scenario-3-managing-ambiguous-product-architecture-requests)
+   * [Conflict Resolution in Code Review Standards](#scenario-4-conflict-resolution-in-code-review-standards)
 
 ---
 
-## 🚀 Overview & Core Value Proposition
+## 1. EPAM Interview Process & Core Values
 
-**Elyvo** is a state-of-the-art, real-time collaborative technical interview platform built for high-performance engineering teams. Designed with an **"Obsidian" aesthetic**, high-throughput multi-user execution sandboxes, and intelligent AI diagnostics, Elyvo elevates technical candidate evaluation to industry enterprise standards.
-
-### ✨ Key Capabilities
-* **Synchronized Real-Time IDE**: Zero-latency collaborative editor powered by Monaco Editor, supporting multi-language syntax highlighting, auto-completion, and state management (JavaScript, Python, C++, Java, C).
-* **High-Definition Video & Peer-to-Peer Audio/Chat**: Built on Stream.io SDKs with token lifetime persistence for uninterrupted long-form interview sessions.
-* **AI Interview Co-pilot & Roast Engine**: Powered by Groq (Llama-3.3-70B) & Gemini Flash for real-time hint generation, sarcastic/engaging coding feedback, and structural logic verification.
-* **Candidate Analytics & Heatmaps**: Interactive dashboard rendering candidate history, execution accuracy, activity heatmaps, and past interview metrics.
-* **Hardened Administrative API**: Multi-admin identity governance using Clerk IDs combined with global admin secrets for bulk challenge provisioning.
+EPAM Systems focuses heavily on **Product Engineering Excellence**. Unlike standard IT services firms that evaluate based on memorized definitions, EPAM seeks:
+* **Production-Grade Code**: Modularity, clean variable naming, exception handling, and readability.
+* **Algorithmic efficiency**: Strong justification for Space & Time complexities.
+* **Interactive Communication**: The ability to talk through trade-offs (e.g., choosing WebSockets over HTTP Polling).
 
 ---
 
-## 🏗️ Tech Stack & System Architecture
+## 2. Deep Dive: EPAM DSA Challenge Catalog from Elyvo
 
-### Technical Breakdown
-* **Frontend**: React (Vite), Tailwind CSS, Lucide Icons, Monaco Code Editor, Stream Video React SDK.
-* **Backend**: Node.js, Express.js, Mongoose (MongoDB Atlas).
-* **Authentication**: Clerk Multi-Session & Identity Management.
-* **Audio/Video & Real-Time Chat**: Stream.io SDK.
-* **AI Diagnostics**: Groq SDK (Llama 3.3 70B Versatile) & Google Gemini Flash.
-* **Code Execution Sandbox**: Piston Remote Execution Engine.
+EPAM uses the following problems (featured directly inside your Elyvo codebase) to evaluate core data structure familiarity.
 
-### 1. High-Level Architecture Diagram
+### Binary Tree Level Order Traversal
+* **EPAM Focus**: Recursion vs. Iterative Breadth-First Search (BFS) performance.
 
-```mermaid
-graph TD
-    User((Candidate / Interviewer))
-    Frontend[React Frontend - Vite]
-    Backend[Express Backend - Node.js]
-    DB[(MongoDB - Atlas)]
-    Clerk[Clerk Auth Services]
-    Stream[Stream Video & Chat API]
-    Groq[Groq AI - Llama 3]
-    Piston[Piston Code Sandbox]
-
-    User --> Frontend
-    Frontend --> Clerk
-    Frontend --> Backend
-    Backend --> DB
-    Backend --> Stream
-    Backend --> Groq
-    Backend --> Piston
-    Frontend --> Stream
-```
-
----
-
-## 🤝 Interview Session & Handshake Protocol
-
-During an interview session, security and low latency are paramount. The handshake mechanism manages JWT validation via Clerk and provisions long-lived Stream.io tokens (configured for **67-day operational validity** per interview room).
-
-### 2. Session Lifecycle Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant H as Host / Interviewer
-    participant F as Frontend Client
-    participant B as Backend Server
-    participant C as Clerk Auth Engine
-    participant S as Stream Infrastructure
-
-    H->>F: Create Interview Session (Select Problem X)
-    F->>C: Validate Bearer JWT Token
-    C-->>F: Session Token Valid
-    F->>B: POST /api/sessions (Payload: problemId)
-    B->>B: Generate unique 6-character joinCode
-    B->>S: Request Video & Chat Credentials (67 Day Expiry)
-    S-->>B: Stream User Token & Channel ID
-    B-->>F: Return Session Object + joinCode + Stream Tokens
-    F->>H: Redirect Client to /session/:id
-```
-
----
-
-## 💡 AI Diagnostics & Co-pilot Engine
-
-The platform incorporates real-time AI capabilities allowing candidates or interviewers to request hints, code execution feedback, or logic reviews.
-
-### 3. Code Execution & AI Hint Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant U as User (Candidate/Interviewer)
-    participant IDE as Monaco Editor UI
-    participant B as Express API Backend
-    participant P as Piston Sandboxed Executor
-    participant AI as Groq Llama-3.3 Engine
-
-    U->>IDE: Write Code Solution
-    U->>IDE: Click "Execute Code"
-    IDE->>B: POST /api/code/run (code, language, problemId)
-    B->>P: Send Payload to Sandboxed Runtime
-    P-->>B: Return Stdout, Stderr, Execution Time
-    B-->>IDE: Deliver Formatted Output
-    IDE->>U: Display Execution Status & Console Output
-
-    Note over U, AI: AI Assist & Diagnostic Flow
-    U->>IDE: Click "Get Hint / Roast"
-    IDE->>B: POST /api/ai/hint (problem, solution, attemptHistory)
-    B->>AI: Dispatch Prompt (Context + Candidate Code)
-    AI-->>B: Generate AI Response (Structured Markdown / Hint)
-    B-->>IDE: HTTP 200 OK Response
-    IDE->>U: Render Modal with Contextual Guidance
-```
-
----
-
-## 🛡️ Backend Middleware & Authentication Pipeline
-
-All incoming administrative and user requests pass through strict layered middleware ensuring resource isolation and route protection.
-
-### 4. Middleware Flowchart
-
-```mermaid
-graph LR
-    Req[Incoming Client Request] --> ClerkMiddleware[Clerk Middleware]
-    ClerkMiddleware --> |Invalid JWT| 401[401 Unauthorized]
-    ClerkMiddleware --> |Valid Token| ProtectRoute[ProtectRoute Middleware]
-
-    ProtectRoute --> |Find User Identity| DB[(MongoDB)]
-    DB --> |User Record Exists| Attach[Attach User Object to req.user]
-
-    Attach --> AdminCheck{Requires Admin Access?}
-    AdminCheck --> |No| Controller[Route Controller Handler]
-    AdminCheck --> |Yes| AdminAuth[Admin Authorization Check]
-
-    AdminAuth --> |Matches x-admin-secret OR req.user.clerkId in ADMIN_IDS| Controller
-    AdminAuth --> |Verification Failed| 403[403 Forbidden Access]
-
-    Controller --> Response[Send JSON Payload]
-```
-
----
-
-## 🔐 Administration & Content Management Guide
-
-Administrative access allows engineers and recruiters to manage coding challenges, adjust test cases, and control candidate permissions.
-
-### Authentication Modes
-1. **Global Admin Secret (API & Postman)**:
-   * **Header Name**: `x-admin-secret`
-   * **Value Configuration**: Set in `backend/.env` under `ADMIN_SECRET` (Default: `elyvo_admin_secret_2026`).
-2. **User-Based Admin Clerk IDs (Web UI)**:
-   * **Value Configuration**: Set comma-separated Clerk IDs in `backend/.env` under `ADMIN_IDS`.
-   * **Example**: `ADMIN_IDS=user_2qDxxx,user_3xYyyy`
-
-### Admin Problem REST API Reference
-**Base Path**: `http://localhost:5001/api/admin/problems`
-
-#### 1. Create Problem (`POST /`)
-* **Headers**: `x-admin-secret: <ADMIN_SECRET>`
-* **Request Payload**:
-```json
-{
-  "id": "two-sum",
-  "title": "Two Sum",
-  "difficulty": "Easy",
-  "category": "Array",
-  "description": "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.",
-  "constraints": ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"],
-  "starterCode": {
-    "javascript": "function twoSum(nums, target) {\n  // Write solution here\n}",
-    "python": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        pass"
-  },
-  "testCases": [
-    { "input": [4, [2, 7, 11, 15], 9], "output": "0 1" }
-  ]
+#### JavaScript Optimal Implementation (BFS using Queue)
+```javascript
+function levelOrder(root) {
+  if (!root) return [];
+  const result = [];
+  const queue = [root];
+  
+  while (queue.length > 0) {
+    const levelSize = queue.length;
+    const currentLevel = [];
+    
+    for (let i = 0; i < levelSize; i++) {
+      const node = queue.shift();
+      currentLevel.push(node.val);
+      if (node.left) queue.push(node.left);
+      if (node.right) queue.push(node.right);
+    }
+    result.push(currentLevel);
+  }
+  return result;
 }
 ```
 
-#### 2. Update Problem (`PUT /:id`)
-* **Headers**: `x-admin-secret: <ADMIN_SECRET>`
-* **URL**: `http://localhost:5001/api/admin/problems/two-sum`
-* **Request Payload**: Include fields requiring mutation.
-
-#### 3. Delete Problem (`DELETE /:id`)
-* **Headers**: `x-admin-secret: <ADMIN_SECRET>`
-* **URL**: `http://localhost:5001/api/admin/problems/two-sum`
+* **Complexity**: 
+  * **Time**: $\mathcal{O}(N)$ where $N$ is the number of nodes in the tree, visiting each node exactly once.
+  * **Space**: $\mathcal{O}(W)$ where $W$ is the maximum width of the tree (leaves at the bottom level, up to $N/2$ nodes in a balanced tree).
+* **Edge Cases to Discuss with Interviewer**:
+  1. *Empty Tree*: Immediately return `[]` to avoid null pointer exceptions.
+  2. *Skewed Tree (Linked List)*: Point out that space complexity reduces to $\mathcal{O}(1)$ active elements in queue, but recursive solutions would hit $\mathcal{O}(N)$ call stack frames.
 
 ---
 
-## 📝 Database Schema & Problem Catalog Specification
+### Merge Intervals
+* **EPAM Focus**: Greedy algorithm approach, sorting criteria, and inplace array manipulation.
 
-### Data Dictionary
+#### Python Optimal Implementation (Greedy/Sort)
+```python
+def merge_intervals(intervals):
+    if not intervals:
+        return []
+    # Sort by start times
+    intervals.sort(key=lambda x: x[0])
+    
+    merged = [intervals[0]]
+    for current in intervals[1:]:
+        prev = merged[-1]
+        # Overlap check
+        if current[0] <= prev[1]:
+            prev[1] = max(prev[1], current[1])
+        else:
+            merged.append(current)
+            
+    return merged
+```
 
-| Field | Schema Type | Constraints | Description |
-| :--- | :--- | :--- | :--- |
-| `id` | String | Unique, Index | Unique slug identifier (e.g., `palindrome-number`) |
-| `title` | String | Required | Display name of the problem |
-| `difficulty` | String | Enum (`Easy`, `Medium`, `Hard`) | Difficulty tier |
-| `category` | String | Required | Domain tag (e.g., `Array`, `Trees`, `Dynamic Programming`) |
-| `description` | String | Markdown | Detailed problem description & example explanations |
-| `starterCode` | Map/Object | Keys: `javascript`, `python`, `cpp`, `java`, `c` | Starter boilerplate code provided to candidates |
-| `testCases` | Array | Objects containing `input`, `output` | Automated verification cases for Piston sandbox |
+* **Complexity**:
+  * **Time**: $\mathcal{O}(N \log N)$ driven by sorting the input array.
+  * **Space**: $\mathcal{O}(N)$ or $\mathcal{O}(\log N)$ depending on the space consumption of the sorting algorithm implementation.
+* **Edge Cases to Discuss with Interviewer**:
+  1. *Fully overlapping arrays*: e.g., `[[1,10], [2,3], [4,5]]` outputs `[[1,10]]`.
+  2. *Already sorted / non-overlapping arrays*: Ensure code runs in minimal passes without unnecessary modifications.
 
 ---
 
-## 📦 Setup, Execution & Environment Configuration
+### Number of Islands
+* **EPAM Focus**: Graph traversal (DFS/BFS), stack overflow handling on large grid inputs, matrix mutation policies.
 
-### 1. Repository Setup
-```bash
-git clone https://github.com/AbhinavSinghBhadouria/Elyvo.git
-cd Elyvo
+#### JavaScript Optimal Implementation (DFS)
+```javascript
+function numIslands(grid) {
+  if (!grid || grid.length === 0) return 0;
+  let count = 0;
+  const rows = grid.length;
+  const cols = grid[0].length;
+  
+  function dfs(r, c) {
+    if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] !== '1') {
+      return;
+    }
+    grid[r][c] = '0'; // Sink visited land to prevent cycles
+    dfs(r + 1, c);
+    dfs(r - 1, c);
+    dfs(r, c + 1);
+    dfs(r, c - 1);
+  }
+  
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] === '1') {
+        count++;
+        dfs(r, c);
+      }
+    }
+  }
+  return count;
+}
 ```
 
-### 2. Environment Variables Configuration (`backend/.env`)
-```env
-PORT=5001
-DB_URL=mongodb+srv://<username>:<password>@cluster.mongodb.net/elyvo
-CLERK_SECRET_KEY=sk_test_...
-STREAM_API_KEY=your_stream_api_key
-STREAM_API_SECRET=your_stream_api_secret
-GROQ_API_KEY=gsk_...
-ADMIN_SECRET=elyvo_admin_secret_2026
-ADMIN_IDS=user_clerk_id_1,user_clerk_id_2
-```
-
-### 3. Dependency Installation & Launch
-```bash
-# Backend Installation
-cd backend && npm install
-
-# Frontend Installation
-cd ../frontend/vite-project && npm install
-
-# Run Complete Application
-cd ../..
-npm run dev
-```
+* **Complexity**:
+  * **Time**: $\mathcal{O}(R \times C)$ where $R$ is rows and $C$ is columns, as we scan every cell.
+  * **Space**: $\mathcal{O}(R \times C)$ in worst-case call stack recursion (e.g. grid filled entirely with land '1').
+* **Edge Cases to Discuss with Interviewer**:
+  1. *Grid modification side-effects*: Mention that in a production database, you should avoid modifying the input grid directly unless acceptable. Alternatively, use a `visited` boolean matrix to avoid mutating state.
 
 ---
 
-<p align="center">
-  <strong>Elyvo Interview Guide V2.0</strong> • Formatted for full system transparency & developer readiness.
-</p>
+### Longest Substring Without Repeating Characters
+* **EPAM Focus**: Sliding window optimization, hash maps, optimization of inner loops.
+
+#### Python Optimal Implementation (Sliding Window / Hash Map)
+```python
+def length_of_longest_substring(s):
+    char_map = {}
+    max_len = 0
+    start = 0
+    
+    for end, char in enumerate(s):
+        if char in char_map and char_map[char] >= start:
+            start = char_map[char] + 1
+        char_map[char] = end
+        max_len = max(max_len, end - start + 1)
+        
+    return max_len
+```
+
+* **Complexity**:
+  * **Time**: $\mathcal{O}(N)$ where $N$ is string length. We iterate once with two pointers.
+  * **Space**: $\mathcal{O}(\min(M, N))$ where $M$ is the size of the alphabet set (e.g. 128 for standard ASCII).
+
+---
+
+## 3. System Design Case Study: Elyvo Architecture
+
+If asked to present a recent system architecture you worked on, **Elyvo** represents a gold standard real-time full-stack web application.
+
+```mermaid
+graph TD
+    Client[React SPA client]
+    Server[Express API Server]
+    WS[Socket.io Server]
+    Exec[Piston Runtime Sandbox]
+    DB[(MongoDB Atlas)]
+
+    Client -->|WebSockets| WS
+    Client -->|HTTP / Clerk Auth| Server
+    Server --> DB
+    Server -->|Code compilation request| Exec
+```
+
+### Real-Time IDE Workspace Sync
+* **The Design**: Elyvo utilizes WebSockets (via `Socket.io`) paired with the Monaco Code Editor client.
+* **Interview Point**: To present this to EPAM:
+  > *"We implemented a low-latency workspace coordination layer using a peer-to-peer Socket.io synchronization server. When a candidate modifies the IDE state, instead of shipping the entire document body, the client emits operational diff frames. The server validates room membership, logs changes to the active session database schema, and broadcasts the updates to the interviewer's DOM."*
+
+### Audio, Video & Chat Telemetry Integration
+* **The Design**: Stream.io SDK client integrated with custom backend API credential provisioning.
+* **Interview Point**:
+  > *"To support continuous video/audio streams during 2+ hour sessions without session dropout, we designed a Token Generation Middleware in Node.js. It queries the Stream SDK using server-side environment secrets to generate tokens with a validated 67-day lifetime bound to the specific interview Room ID, matching MongoDB session documents."*
+
+### Sandboxed Execution Engine Pattern
+* **The Design**: Remote integration with Piston API to compile and evaluate code dynamically.
+* **Interview Point**:
+  > *"To execute candidate code securely, we decoupled evaluation from the core application server using a sandboxed execution microservice. The Express controller validates inputs, translates execution targets (Python, JS, C++, C, Java), passes code snippets to the sandbox backend, reads stdout/stderr, and returns clean outputs to the client."*
+
+### Identity Federation & Secure Route Middleware
+* **The Design**: Layered validation: Clerk JWT checks → Database records matching Clerk ID → Route verification.
+* **Interview Point**: 
+  * Explain how administrative operations (like uploading mock problem catalogs) are secured via `x-admin-secret` check and role-based checks.
+
+---
+
+## 4. EPAM Situational & Behavioral Questions (STAR Method)
+
+EPAM places major emphasis on behavioral fit. Be sure to frame your answers using the **STAR** method (**S**ituation, **T**ask, **A**ction, **R**esults).
+
+### Scenario 1: Dealing with Legacy API / Dependency Failures
+* **Question**: *"Describe a time a third-party dependency broke in your application right before production/review. How did you resolve it?"*
+* **STAR Response**:
+  * **Situation**: During a final platform evaluation, the Sarcastic AI Roast module broke with a `404 invalid_request_error`. Groq had deprecated the `llama-3.3-70b-versatile` API endpoint.
+  * **Task**: I needed to quickly restore functional co-pilot APIs without causing client-side disruption or long server downtimes.
+  * **Action**: I audited the backend AI service layers (`ai.services.js`). I mapped the retired LLM identifiers to the current supported model `llama3-70b-8192`. I also redesigned the frontend `DailyRoast` skeleton UI states to handle fallback messaging elegantly if the model server experienced future API rate limits.
+  * **Result**: Compiles built cleanly with zero dependencies affected. Test routes returned a 100% success rate, and code reviews, hints, and roasts were successfully restored.
+
+### Scenario 2: Handling High Latency / Synchronization Tradeoffs
+* **Question**: *"How do you make architectural trade-offs between performance and data integrity?"*
+* **STAR Response**:
+  * **Situation**: When saving problem progress on Elyvo (e.g. marking a challenge solved), syncing directly with MongoDB on every single state toggle caused micro-stutter on low-bandwidth clients.
+  * **Task**: Make progress tracking instant while guaranteeing the backend matches frontend state eventually.
+  * **Action**: I implemented a **Local-First caching architecture**. When progress changes, we immediately update a reactive `Set` state, write to the browser's `localStorage`, and broadcast updates via window events so components render instantly. Then, we dispatch a non-blocking background async HTTP request to sync with the database.
+  * **Result**: UI responsiveness became immediate ($<5\text{ms}$ updates), while network latency was completely hidden from the user experience.
+
+### Scenario 3: Managing Ambiguous Product Architecture Requests
+* **Question**: *"Tell me about a time a client requested a major feature with very vague criteria."*
+* **STAR Response**:
+  * **Situation**: The user requested that we: *"Change the UI of the whole website and make it beautiful and bug-free, and add a company-wise process section."*
+  * **Task**: Define the exact architectural boundaries, theme palettes, and structure for the rewrite without continuous back-and-forth blockages.
+  * **Action**: I created a structured implementation plan. I chose a premium "Golden Dark" theme palette to ensure maximum aesthetic appeal. I designed a unified mock logo schema (`Logo.jsx`) and built inline SVG renderers for EPAM, TCS, and Cognizant logos to provide distinct branding. I systematically went page by page (Home, Companies, Detail, Problems, Dashboard) replacing colors and checking code stability.
+  * **Result**: Delivered a premium dashboard layout, verified 100% clean client builds, and received instant user sign-off on the first delivery.
+
+### Scenario 4: Conflict Resolution in Code Review Standards
+* **Question**: *"How do you handle disagreements on technical choices within your engineering team?"*
+* **STAR Response**:
+  * **Situation**: There was a debate on whether to use global CSS variables (`index.css`) or inline style attributes in components. Inline styles offer immediate guarantees, but global styles are easier to scale.
+  * **Task**: Align the codebase structure for the rewrite to ensure look-and-feel consistency.
+  * **Action**: I proposed a hybrid approach. I consolidated core tokens (colors, background mesh grids, primary gradients) as clean global CSS variables inside `index.css` so they are reusable across all pages. For minor animation timing variations (such as custom delays on welcome splash elements), I kept isolated inline styles to prevent polluting global classes.
+  * **Result**: We achieved a modular, easily themeable stylesheet system while keeping individual pages simple and readable, resulting in zero regressions.
