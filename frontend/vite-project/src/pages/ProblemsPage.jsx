@@ -154,27 +154,27 @@ function ProblemsPage() {
 
   const getDifficultyColor = (diff) => {
     switch (diff?.toLowerCase()) {
-      case 'easy': return 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5';
-      case 'medium': return 'text-blue-400 border-blue-400/20 bg-blue-400/5';
-      case 'hard': return 'text-rose-400 border-rose-400/20 bg-rose-400/5';
-      default: return 'text-slate-400 border-slate-400/20 bg-slate-400/5';
+      case 'easy':   return 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5';
+      case 'medium': return 'text-[#D4AF37] border-[#D4AF37]/25 bg-[#D4AF37]/5';
+      case 'hard':   return 'text-rose-400 border-rose-400/20 bg-rose-400/5';
+      default:       return 'text-slate-400 border-slate-400/20 bg-slate-400/5';
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-100 selection:bg-blue-500/30 font-inter">
+    <div className="min-h-screen text-slate-100 font-inter" style={{ background:"var(--bg-main)" }}>
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-6 py-16 space-y-16">
         {/* HERO SECTION */}
-        <header className="relative rounded-3xl border border-white/[0.05] bg-slate-900/20 overflow-hidden shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-slate-600/10 opacity-40" />
+        <header className="relative rounded-3xl overflow-hidden shadow-2xl" style={{ border:"1px solid rgba(212,175,55,0.12)", background:"rgba(19,19,32,0.70)" }}>
+          <div className="absolute inset-0" style={{ background:"linear-gradient(135deg, rgba(212,175,55,0.05) 0%, transparent 60%)" }} />
 
           <div className="relative z-10 grid lg:grid-cols-[1fr_350px] gap-12 p-10 md:p-16 items-center">
             <div className="space-y-8">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 w-fit">
-                <Sparkles className="size-3.5 text-blue-400" />
-                <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Curated Problem Set</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full w-fit" style={{ background:"rgba(212,175,55,0.08)", border:"1px solid rgba(212,175,55,0.25)" }}>
+                <Sparkles className="size-3.5" style={{ color:"#D4AF37" }} />
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color:"#D4AF37" }}>Curated Problem Set</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight">
                 Master the <br />
@@ -210,12 +210,13 @@ function ProblemsPage() {
           </div>
 
           <div className="relative w-full md:w-[400px] group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-4 text-slate-600 group-focus-within:text-blue-400 transition-colors" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-4 text-slate-600 transition-colors" style={{ color: query ? "#D4AF37" : undefined }} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search challenges or company (#EPAM, #TCS)..."
-              className="w-full pl-12 pr-6 py-3 rounded-xl bg-white/5 border border-white/5 focus:outline-none focus:border-blue-500/40 text-sm transition-all font-medium"
+              className="w-full pl-12 pr-6 py-3 rounded-xl text-sm transition-all font-medium outline-none"
+              style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(212,175,55,0.18)", color:"#f1f5f9" }}
             />
           </div>
         </section>
@@ -229,9 +230,14 @@ function ProblemsPage() {
               onClick={() => setQuery(query.toLowerCase() === comp.toLowerCase() ? "" : comp)}
               className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
                 query.toLowerCase() === comp.toLowerCase()
-                  ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-sm"
-                  : "bg-white/5 border-white/5 text-slate-400 hover:text-white hover:border-white/10"
+                  ? ""
+                  : ""
               }`}
+              style={
+                query.toLowerCase() === comp.toLowerCase()
+                  ? { background:"rgba(212,175,55,0.14)", color:"#D4AF37", borderColor:"rgba(212,175,55,0.40)" }
+                  : { background:"rgba(255,255,255,0.04)", borderColor:"rgba(212,175,55,0.12)", color:"#94a3b8" }
+              }
             >
               #{comp}
             </button>
