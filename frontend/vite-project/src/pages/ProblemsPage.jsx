@@ -264,12 +264,12 @@ function ProblemsPage() {
                                 <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">Solved</span>
                             )}
                             </div>
-                            <p className="text-slate-500 text-sm leading-relaxed line-clamp-1 max-w-xl font-medium">
+                            <p className="text-slate-300 text-sm leading-relaxed line-clamp-1 max-w-xl font-medium">
                             {problem.description?.split('\n')[0] || "Advanced coding challenge for professional growth."}
                             </p>
                             <div className="flex flex-wrap gap-2 pt-1">
                             {problem.tags?.slice(0, 3).map(tag => (
-                                <span key={tag} className="text-[10px] font-semibold text-slate-600 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5 uppercase tracking-wider">#{tag}</span>
+                                <span key={tag} className="text-[10px] font-semibold text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10 uppercase tracking-wider">#{tag}</span>
                             ))}
                             </div>
                         </div>
@@ -284,12 +284,12 @@ function ProblemsPage() {
                             className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${
                                 isSolved
                                 ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
-                                : 'border-white/10 text-slate-600 hover:text-white hover:bg-white/5'
+                                : 'border-white/20 text-slate-200 hover:text-white hover:bg-white/10'
                             }`}
                             >
                             {isSolved ? 'Reset' : 'Check'}
                             </button>
-                            <ChevronRight className="size-6 text-slate-800 group-hover:text-blue-500 transition-colors" />
+                            <ChevronRight className="size-6 text-slate-400 group-hover:text-blue-400 transition-colors" />
                         </div>
                         </div>
                     </Link>
