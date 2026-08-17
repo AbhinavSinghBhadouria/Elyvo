@@ -108,3 +108,9 @@ h1, h2, h3, h4, h5, h6 {
 .tracking-premium {
   letter-spacing: 0.2em;
 }
+
+/* Ensure all reveal elements are fully visible immediately without reliance on JS timing */
+.reveal {
+  opacity: 1 !important;
+  transform: none !important;
+}
