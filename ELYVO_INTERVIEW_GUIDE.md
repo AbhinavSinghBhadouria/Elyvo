@@ -1,51 +1,21 @@
-# 🏆 EPAM Systems Ultimate Technical & Behavioral Prep Guide
+# 🏆 EPAM Systems Technical & Behavioral Interview Q&A Guide
 
-This guide is designed to help you ace your **EPAM Systems** technical interviews by drawing direct, deep connections to the architectural patterns, challenges, and implementation details of **Elyvo**. 
-
-EPAM interviews evaluate candidate proficiency on three pillars: **Optimal DSA Problem Solving**, **System Architecture / Clean Code**, and **Situational Behavioral Scenarios**. This document prepares you to master all three.
+This guide contains a highly readable, direct Question & Answer prep catalog tailored to EPAM Systems interviews, drawing connections to the design, challenges, and code of **Elyvo**.
 
 ---
 
-## 📋 Table of Contents
-1. [EPAM Interview Process & Core Values](#1-epam-interview-process--core-values)
-2. [Deep Dive: EPAM DSA Challenge Catalog from Elyvo](#2-deep-dive-epam-dsa-challenge-catalog-from-elyvo)
-   * [Binary Tree Level Order Traversal](#binary-tree-level-order-traversal)
-   * [Merge Intervals](#merge-intervals)
-   * [Number of Islands](#number-of-islands)
-   * [Longest Substring Without Repeating Characters](#longest-substring-without-repeating-characters)
-3. [System Design Case Study: Elyvo Architecture](#3-system-design-case-study-elyvo-architecture)
-   * [Real-Time IDE Workspace Sync](#real-time-ide-workspace-sync)
-   * [Audio, Video & Chat Telemetry Integration](#audio-video--chat-telemetry-integration)
-   * [Sandboxed Execution Engine Pattern](#sandboxed-execution-engine-pattern)
-   * [Identity Federation & Secure Route Middleware](#identity-federation--secure-route-middleware)
-4. [EPAM Situational & Behavioral Questions (STAR Method)](#4-epam-situational--behavioral-questions-star-method)
-   * [Dealing with Legacy API / Dependency Failures](#scenario-1-dealing-with-legacy-api--dependency-failures)
-   * [Handling High Latency / Synchronization Tradeoffs](#scenario-2-handling-high-latency--synchronization-tradeoffs)
-   * [Managing Ambiguous Product Architecture Requests](#scenario-3-managing-ambiguous-product-architecture-requests)
-   * [Conflict Resolution in Code Review Standards](#scenario-4-conflict-resolution-in-code-review-standards)
+## 📂 Section 1: Algorithmic & Coding Questions (DSA)
 
----
+### Q1: How do you implement a level-order traversal of a binary tree?
 
-## 1. EPAM Interview Process & Core Values
+**Answer:**
+To traverse a binary tree level-by-level (Breadth-First Search), we use an iterative queue-based approach. We avoid recursive DFS here because BFS naturally processes level-by-level and prevents deep recursion call stack overflows.
 
-EPAM Systems focuses heavily on **Product Engineering Excellence**. Unlike standard IT services firms that evaluate based on memorized definitions, EPAM seeks:
-* **Production-Grade Code**: Modularity, clean variable naming, exception handling, and readability.
-* **Algorithmic efficiency**: Strong justification for Space & Time complexities.
-* **Interactive Communication**: The ability to talk through trade-offs (e.g., choosing WebSockets over HTTP Polling).
-
----
-
-## 2. Deep Dive: EPAM DSA Challenge Catalog from Elyvo
-
-EPAM uses the following problems (featured directly inside your Elyvo codebase) to evaluate core data structure familiarity.
-
-### Binary Tree Level Order Traversal
-* **EPAM Focus**: Recursion vs. Iterative Breadth-First Search (BFS) performance.
-
-#### JavaScript Optimal Implementation (BFS using Queue)
+**JavaScript Implementation:**
 ```javascript
 function levelOrder(root) {
   if (!root) return [];
+  
   const result = [];
   const queue = [root];
   
@@ -56,39 +26,46 @@ function levelOrder(root) {
     for (let i = 0; i < levelSize; i++) {
       const node = queue.shift();
       currentLevel.push(node.val);
+      
       if (node.left) queue.push(node.left);
       if (node.right) queue.push(node.right);
     }
     result.push(currentLevel);
   }
+  
   return result;
 }
 ```
 
-* **Complexity**: 
-  * **Time**: $\mathcal{O}(N)$ where $N$ is the number of nodes in the tree, visiting each node exactly once.
-  * **Space**: $\mathcal{O}(W)$ where $W$ is the maximum width of the tree (leaves at the bottom level, up to $N/2$ nodes in a balanced tree).
-* **Edge Cases to Discuss with Interviewer**:
-  1. *Empty Tree*: Immediately return `[]` to avoid null pointer exceptions.
-  2. *Skewed Tree (Linked List)*: Point out that space complexity reduces to $\mathcal{O}(1)$ active elements in queue, but recursive solutions would hit $\mathcal{O}(N)$ call stack frames.
+**Complexity Analysis:**
+* **Time Complexity:** $\mathcal{O}(N)$ — We visit each of the $N$ nodes in the tree exactly once.
+* **Space Complexity:** $\mathcal{O}(W)$ — Where $W$ is the maximum width of the tree. In a balanced binary tree, the queue holds up to $N/2$ leaf nodes at the bottom level.
+
+**Critical Edge Cases to Mention:**
+1. **Empty Tree:** If `root` is null, immediately return `[]` to prevent runtime errors.
+2. **Skewed Tree (Linked List structure):** The queue size remains $\mathcal{O}(1)$ at any point, making it highly memory efficient compared to recursion.
 
 ---
 
-### Merge Intervals
-* **EPAM Focus**: Greedy algorithm approach, sorting criteria, and inplace array manipulation.
+### Q2: How do you merge overlapping intervals?
 
-#### Python Optimal Implementation (Greedy/Sort)
+**Answer:**
+We sort the intervals by their start times first. This allows us to resolve overlaps in a single linear pass by checking if the start of the current interval is less than or equal to the end of the previously merged interval.
+
+**Python Implementation:**
 ```python
 def merge_intervals(intervals):
     if not intervals:
         return []
-    # Sort by start times
+        
+    # Sort intervals by start time
     intervals.sort(key=lambda x: x[0])
     
     merged = [intervals[0]]
     for current in intervals[1:]:
         prev = merged[-1]
-        # Overlap check
+        
+        # If current interval overlaps with previous, merge them
         if current[0] <= prev[1]:
             prev[1] = max(prev[1], current[1])
         else:
@@ -97,31 +74,40 @@ def merge_intervals(intervals):
     return merged
 ```
 
-* **Complexity**:
-  * **Time**: $\mathcal{O}(N \log N)$ driven by sorting the input array.
-  * **Space**: $\mathcal{O}(N)$ or $\mathcal{O}(\log N)$ depending on the space consumption of the sorting algorithm implementation.
-* **Edge Cases to Discuss with Interviewer**:
-  1. *Fully overlapping arrays*: e.g., `[[1,10], [2,3], [4,5]]` outputs `[[1,10]]`.
-  2. *Already sorted / non-overlapping arrays*: Ensure code runs in minimal passes without unnecessary modifications.
+**Complexity Analysis:**
+* **Time Complexity:** $\mathcal{O}(N \log N)$ — Dominated by sorting the $N$ intervals. The subsequent linear scan takes $\mathcal{O}(N)$ time.
+* **Space Complexity:** $\mathcal{O}(N)$ or $\mathcal{O}(\log N)$ — Used to store the sorted output or system stack space for sorting.
+
+**Critical Edge Cases to Mention:**
+1. **No Intervals:** Return an empty array `[]` immediately.
+2. **Total Overlap:** A single large interval containing many smaller ones (e.g., `[[1, 10], [2, 5], [6, 8]]`) merges correctly into `[[1, 10]]`.
 
 ---
 
-### Number of Islands
-* **EPAM Focus**: Graph traversal (DFS/BFS), stack overflow handling on large grid inputs, matrix mutation policies.
+### Q3: How do you find the number of islands in a 2D binary grid?
 
-#### JavaScript Optimal Implementation (DFS)
+**Answer:**
+We can represent the grid as an unweighted graph and perform a Depth-First Search (DFS) or Breadth-First Search (BFS) whenever we encounter land (`'1'`). During traversal, we "sink" the land by changing `'1'`s to `'0'`s to avoid infinite cycles and redundant checks.
+
+**JavaScript Implementation:**
 ```javascript
 function numIslands(grid) {
   if (!grid || grid.length === 0) return 0;
-  let count = 0;
+  
+  let islandCount = 0;
   const rows = grid.length;
   const cols = grid[0].length;
   
   function dfs(r, c) {
+    // Boundary check and water check
     if (r < 0 || c < 0 || r >= rows || c >= cols || grid[r][c] !== '1') {
       return;
     }
-    grid[r][c] = '0'; // Sink visited land to prevent cycles
+    
+    // Mark as visited by sinking the land
+    grid[r][c] = '0';
+    
+    // Visit all 4 adjacent directions
     dfs(r + 1, c);
     dfs(r - 1, c);
     dfs(r, c + 1);
@@ -131,120 +117,132 @@ function numIslands(grid) {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (grid[r][c] === '1') {
-        count++;
+        islandCount++;
         dfs(r, c);
       }
     }
   }
-  return count;
+  
+  return islandCount;
 }
 ```
 
-* **Complexity**:
-  * **Time**: $\mathcal{O}(R \times C)$ where $R$ is rows and $C$ is columns, as we scan every cell.
-  * **Space**: $\mathcal{O}(R \times C)$ in worst-case call stack recursion (e.g. grid filled entirely with land '1').
-* **Edge Cases to Discuss with Interviewer**:
-  1. *Grid modification side-effects*: Mention that in a production database, you should avoid modifying the input grid directly unless acceptable. Alternatively, use a `visited` boolean matrix to avoid mutating state.
+**Complexity Analysis:**
+* **Time Complexity:** $\mathcal{O}(R \times C)$ — Where $R$ is rows and $C$ is columns. We scan each cell in the grid.
+* **Space Complexity:** $\mathcal{O}(R \times C)$ — In the worst case where the grid is filled entirely with land, the call stack can go as deep as the total number of cells.
+
+**Critical Edge Cases to Mention:**
+1. **Grid Side-Effects:** Mutating the input matrix might not be acceptable in all production environments. In an interview, ask if mutating the grid is allowed or if you should use an auxiliary `visited` set/matrix.
 
 ---
 
-### Longest Substring Without Repeating Characters
-* **EPAM Focus**: Sliding window optimization, hash maps, optimization of inner loops.
+### Q4: How do you find the length of the longest substring without repeating characters?
 
-#### Python Optimal Implementation (Sliding Window / Hash Map)
+**Answer:**
+We use a sliding window approach with a hash map to track the most recent index of each character. This allows us to adjust the start index of our window without resetting the loop, achieving a linear runtime.
+
+**Python Implementation:**
 ```python
 def length_of_longest_substring(s):
     char_map = {}
-    max_len = 0
+    max_length = 0
     start = 0
     
     for end, char in enumerate(s):
+        # If character is repeating and lies within current window
         if char in char_map and char_map[char] >= start:
             start = char_map[char] + 1
+            
         char_map[char] = end
-        max_len = max(max_len, end - start + 1)
+        max_length = max(max_length, end - start + 1)
         
-    return max_len
+    return max_length
 ```
 
-* **Complexity**:
-  * **Time**: $\mathcal{O}(N)$ where $N$ is string length. We iterate once with two pointers.
-  * **Space**: $\mathcal{O}(\min(M, N))$ where $M$ is the size of the alphabet set (e.g. 128 for standard ASCII).
+**Complexity Analysis:**
+* **Time Complexity:** $\mathcal{O}(N)$ — Where $N$ is the length of the string. The `end` pointer scans the string exactly once.
+* **Space Complexity:** $\mathcal{O}(\min(M, N))$ — Where $M$ is the size of the character alphabet (e.g., 26 for lowercase English letters, 128 for ASCII).
 
 ---
 
-## 3. System Design Case Study: Elyvo Architecture
+## 🖥️ Section 2: System Design & Project Architecture Q&A
 
-If asked to present a recent system architecture you worked on, **Elyvo** represents a gold standard real-time full-stack web application.
+### Q5: How does Elyvo handle real-time code editor synchronization between candidates and interviewers?
 
-```mermaid
-graph TD
-    Client[React SPA client]
-    Server[Express API Server]
-    WS[Socket.io Server]
-    Exec[Piston Runtime Sandbox]
-    DB[(MongoDB Atlas)]
-
-    Client -->|WebSockets| WS
-    Client -->|HTTP / Clerk Auth| Server
-    Server --> DB
-    Server -->|Code compilation request| Exec
-```
-
-### Real-Time IDE Workspace Sync
-* **The Design**: Elyvo utilizes WebSockets (via `Socket.io`) paired with the Monaco Code Editor client.
-* **Interview Point**: To present this to EPAM:
-  > *"We implemented a low-latency workspace coordination layer using a peer-to-peer Socket.io synchronization server. When a candidate modifies the IDE state, instead of shipping the entire document body, the client emits operational diff frames. The server validates room membership, logs changes to the active session database schema, and broadcasts the updates to the interviewer's DOM."*
-
-### Audio, Video & Chat Telemetry Integration
-* **The Design**: Stream.io SDK client integrated with custom backend API credential provisioning.
-* **Interview Point**:
-  > *"To support continuous video/audio streams during 2+ hour sessions without session dropout, we designed a Token Generation Middleware in Node.js. It queries the Stream SDK using server-side environment secrets to generate tokens with a validated 67-day lifetime bound to the specific interview Room ID, matching MongoDB session documents."*
-
-### Sandboxed Execution Engine Pattern
-* **The Design**: Remote integration with Piston API to compile and evaluate code dynamically.
-* **Interview Point**:
-  > *"To execute candidate code securely, we decoupled evaluation from the core application server using a sandboxed execution microservice. The Express controller validates inputs, translates execution targets (Python, JS, C++, C, Java), passes code snippets to the sandbox backend, reads stdout/stderr, and returns clean outputs to the client."*
-
-### Identity Federation & Secure Route Middleware
-* **The Design**: Layered validation: Clerk JWT checks → Database records matching Clerk ID → Route verification.
-* **Interview Point**: 
-  * Explain how administrative operations (like uploading mock problem catalogs) are secured via `x-admin-secret` check and role-based checks.
+**Answer:**
+1. **WebSocket Infrastructure:** Elyvo uses a persistent `Socket.io` channel between the React client and Express server.
+2. **Event-Driven Exchange:** The Monaco editor client registers an `onChange` listener. When edits occur, the client translates them to operational data diffs (not the whole file text) and emits an editor update event.
+3. **Optimized Broadcasting:** The backend room controller receives this event, validates the user's room parameters, updates the MongoDB document, and broadcasts the event to the other peer connected to the same session channel.
 
 ---
 
-## 4. EPAM Situational & Behavioral Questions (STAR Method)
+### Q6: How does the application securely integrate real-time video, audio, and chat stream endpoints?
 
-EPAM places major emphasis on behavioral fit. Be sure to frame your answers using the **STAR** method (**S**ituation, **T**ask, **A**ction, **R**esults).
+**Answer:**
+* **Service Decoupling:** Instead of hosting raw WebRTC streams on our server, we offload media hosting to Stream.io.
+* **Secure Token Minting:** On the backend, we created a protected route `/api/sessions` that acts as a token mint. When a session is initiated, the server uses the secret `STREAM_API_SECRET` to sign a JWT containing the user identity.
+* **Safe Lifetime Bounds:** The generated token is configured with a custom, long-lasting validity window matching the interview session duration, ensuring candidates are never dropped mid-interview.
 
-### Scenario 1: Dealing with Legacy API / Dependency Failures
-* **Question**: *"Describe a time a third-party dependency broke in your application right before production/review. How did you resolve it?"*
-* **STAR Response**:
-  * **Situation**: During a final platform evaluation, the Sarcastic AI Roast module broke with a `404 invalid_request_error`. Groq had deprecated the `llama-3.3-70b-versatile` API endpoint.
-  * **Task**: I needed to quickly restore functional co-pilot APIs without causing client-side disruption or long server downtimes.
-  * **Action**: I audited the backend AI service layers (`ai.services.js`). I mapped the retired LLM identifiers to the current supported model `llama3-70b-8192`. I also redesigned the frontend `DailyRoast` skeleton UI states to handle fallback messaging elegantly if the model server experienced future API rate limits.
-  * **Result**: Compiles built cleanly with zero dependencies affected. Test routes returned a 100% success rate, and code reviews, hints, and roasts were successfully restored.
+---
 
-### Scenario 2: Handling High Latency / Synchronization Tradeoffs
-* **Question**: *"How do you make architectural trade-offs between performance and data integrity?"*
-* **STAR Response**:
-  * **Situation**: When saving problem progress on Elyvo (e.g. marking a challenge solved), syncing directly with MongoDB on every single state toggle caused micro-stutter on low-bandwidth clients.
-  * **Task**: Make progress tracking instant while guaranteeing the backend matches frontend state eventually.
-  * **Action**: I implemented a **Local-First caching architecture**. When progress changes, we immediately update a reactive `Set` state, write to the browser's `localStorage`, and broadcast updates via window events so components render instantly. Then, we dispatch a non-blocking background async HTTP request to sync with the database.
-  * **Result**: UI responsiveness became immediate ($<5\text{ms}$ updates), while network latency was completely hidden from the user experience.
+### Q7: How do you execute candidate-submitted code on the server without introducing security vulnerabilities?
 
-### Scenario 3: Managing Ambiguous Product Architecture Requests
-* **Question**: *"Tell me about a time a client requested a major feature with very vague criteria."*
-* **STAR Response**:
-  * **Situation**: The user requested that we: *"Change the UI of the whole website and make it beautiful and bug-free, and add a company-wise process section."*
-  * **Task**: Define the exact architectural boundaries, theme palettes, and structure for the rewrite without continuous back-and-forth blockages.
-  * **Action**: I created a structured implementation plan. I chose a premium "Golden Dark" theme palette to ensure maximum aesthetic appeal. I designed a unified mock logo schema (`Logo.jsx`) and built inline SVG renderers for EPAM, TCS, and Cognizant logos to provide distinct branding. I systematically went page by page (Home, Companies, Detail, Problems, Dashboard) replacing colors and checking code stability.
-  * **Result**: Delivered a premium dashboard layout, verified 100% clean client builds, and received instant user sign-off on the first delivery.
+**Answer:**
+* **Sandbox Isolation:** We do not execute code natively on the server shell. Instead, code execution is delegated to an isolated runtime sandbox (Piston engine).
+* **Network Decoupling:** The Express backend receives the code payload (language, source string, and inputs), sanitizes the data structure, and routes it to the sandboxed runtime environment.
+* **Execution Validation:** The sandbox compiles/interprets the code under strict resource constraints (timeout limits, memory ceiling, blocked system calls), and returns clean stdout/stderr strings back to our backend.
 
-### Scenario 4: Conflict Resolution in Code Review Standards
-* **Question**: *"How do you handle disagreements on technical choices within your engineering team?"*
-* **STAR Response**:
-  * **Situation**: There was a debate on whether to use global CSS variables (`index.css`) or inline style attributes in components. Inline styles offer immediate guarantees, but global styles are easier to scale.
-  * **Task**: Align the codebase structure for the rewrite to ensure look-and-feel consistency.
-  * **Action**: I proposed a hybrid approach. I consolidated core tokens (colors, background mesh grids, primary gradients) as clean global CSS variables inside `index.css` so they are reusable across all pages. For minor animation timing variations (such as custom delays on welcome splash elements), I kept isolated inline styles to prevent polluting global classes.
-  * **Result**: We achieved a modular, easily themeable stylesheet system while keeping individual pages simple and readable, resulting in zero regressions.
+---
+
+## 💬 Section 3: Situational & Behavioral Questions (STAR Method)
+
+### Q8: Describe a time a third-party dependency or API broke unexpectedly. How did you handle it?
+
+**Answer:**
+* **Situation:** During the system integration phase, the AI Roast feature broke with a `404 invalid_request_error`. Groq had retired the `llama-3.3-70b-versatile` LLM model model we were using.
+* **Task:** I had to restore AI services across the codebase (roasts, reviews, hints) without breaking the app or changing the frontend interface.
+* **Action:** 
+  1. I audited the AI services code (`ai.services.js`) and located the deprecated references.
+  2. I mapped all calls to Groq's active model `llama3-70b-8192`.
+  3. I revised the API response parsers to ensure matching output structures.
+  4. I updated the frontend `DailyRoast` card with a gold loading skeleton state to cleanly catch fallback text if the model server ever rate-limits.
+* **Result:** All endpoints compiled cleanly, test requests returned a 100% success rate, and AI services were restored without user-facing disruption.
+
+---
+
+### Q9: How do you manage latency and client-side performance issues during rapid state updates?
+
+**Answer:**
+* **Situation:** Marking coding challenges "solved" required a round-trip database update to MongoDB. On high-latency connections, clicking "solved" took up to 800ms to show feedback on the navbar status badges.
+* **Task:** Make the user experience instantaneous while maintaining eventually consistent database state.
+* **Action:** I introduced a **Local-First state synchronization pattern**:
+  1. On click, the app immediately writes the updated state to a React context and syncs it with the browser's local storage.
+  2. A global custom event `solvedProblemsUpdated` is dispatched to force immediate navbar updates ($<5\text{ms}$).
+  3. The database write call is sent in the background as an asynchronous, non-blocking fetch.
+* **Result:** Page updates became instant for the user, hiding API latency entirely.
+
+---
+
+### Q10: How do you handle vague or ambiguous project requirements?
+
+**Answer:**
+* **Situation:** I was asked to: *"Change the UI of the whole website, make it beautiful, bug-free, and add a company-wise process section."*
+* **Task:** Define the exact styling architecture and layout details without slowing down progress.
+* **Action:** 
+  1. I drew up an implementation plan detailing the pages to modify.
+  2. I established a cohesive theme system: "Golden Dark", using HSL variables (`--gold`, `--bg-main`).
+  3. I created unified components (like `Logo.jsx` and vector company logos) to ensure visual consistency.
+  4. I reviewed every router path and code compile output to guarantee zero regressions.
+* **Result:** The entire frontend was converted to a premium golden dark interface, client builds succeeded with 0 errors, and the changes were deployed to GitHub immediately.
+
+---
+
+### Q11: How do you resolve technical disagreements regarding design patterns or coding standards?
+
+**Answer:**
+* **Situation:** During the design overhaul, there was a disagreement between using global CSS variables vs. inline CSS attributes. Inline styles offered localized speed, while global styles offered long-term maintainability.
+* **Task:** Reconcile these styles to maintain code quality while working quickly.
+* **Action:** I proposed a **hybrid design guideline**:
+  1. We registered all core layout tokens (colors, gradients, glass effects) as global CSS variables in `index.css`.
+  2. We limited inline styles only to localized animation behaviors (like staggered entrance animation delays).
+* **Result:** Both concerns were resolved: developers could easily change themes globally, and custom page animations remained clean and self-contained.
