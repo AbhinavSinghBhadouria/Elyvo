@@ -2,12 +2,12 @@ import { generateHint, generateCodeReview, generateDailyRoast } from '../service
 
 export const getDailyRoast = async (req, res) => {
   try {
-    const userName = req.user.name || "Developer";
+    const userName = req.user?.name || "Developer";
     const response = await generateDailyRoast(userName);
     res.json({ response });
   } catch (error) {
-    console.error("Error generating daily roast:", error);
-    res.status(500).json({ error: "Failed to generate daily roast" });
+    console.error("Error generating daily roast:", error?.message);
+    res.json({ response: "I'd roast your code, but the compiler already did that for me." });
   }
 };
 

@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post("/hint", protectionRoute, getHint);
 router.post("/review", protectionRoute, getReview);
-router.get("/daily-roast", protectionRoute, getDailyRoast);
+router.get("/daily-roast", getDailyRoast);
 
 export default router;
