@@ -22,7 +22,7 @@ Please provide a short, conceptual hint to help them get started or overcome a b
         { role: 'system', content: "You are a helpful and concise coding assistant." },
         { role: 'user', content: prompt }
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama3-70b-8192',
       temperature: 0.7,
       max_tokens: 300,
     });
@@ -59,7 +59,7 @@ Provide a constructive and concise markdown response.`;
         { role: 'system', content: "You are an expert software engineer performing a code review." },
         { role: 'user', content: prompt }
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama3-70b-8192',
       temperature: 0.5,
       max_tokens: 1024,
     });
@@ -86,7 +86,7 @@ Make sure it sounds like it's coming from a superior AI. Keep it under 2 sentenc
         { role: 'system', content: "You are a witty, sarcastic AI roasting a developer." },
         { role: 'user', content: prompt }
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama3-70b-8192',
       temperature: 0.9,
       max_tokens: 150,
     });
