@@ -1,55 +1,54 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  ChevronRight,
-  Code2,
-  Shield,
-  Target,
-  CheckCircle2,
-  Search,
-  Sparkles,
-  Trophy,
-  ArrowUpRight
+  ChevronRight, Code2, Shield, Target,
+  CheckCircle2, Search, Sparkles, ArrowUpRight, Trophy, Zap
 } from "lucide-react";
-
 import Navbar from "../components/Navbar";
 import { problemsApi } from "../api/problems";
 import { progressApi } from "../api/progress";
 import { PROBLEMS } from "../data/problems";
 
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
+const G  = "#D4AF37";
+const GB = "#F5C518";
+
+const DIFF_STYLE = {
+  easy:   { color: "#34d399", bg: "rgba(52,211,153,0.08)",  border: "rgba(52,211,153,0.25)"  },
+  medium: { color: "#D4AF37", bg: "rgba(212,175,55,0.08)",  border: "rgba(212,175,55,0.28)"  },
+  hard:   { color: "#fb7185", bg: "rgba(251,113,133,0.08)", border: "rgba(251,113,133,0.25)" },
+};
+
+function DiffBadge({ diff }) {
+  const s = DIFF_STYLE[diff?.toLowerCase()] || { color:"#94a3b8", bg:"rgba(255,255,255,0.05)", border:"rgba(255,255,255,0.1)" };
+  return (
+    <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest"
+      style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
+      {diff}
+    </span>
+  );
+}
 
 function ProblemsPage() {
-  const [problems, setProblems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [difficulty, setDifficulty] = useState("All");
-  const [query, setQuery] = useState("");
+  const [problems, setProblems]           = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [difficulty, setDifficulty]       = useState("All");
+  const [query, setQuery]                 = useState("");
   const [solvedProblems, setSolvedProblems] = useState(new Set());
 
+  /* ── data fetch ────────────────────────────────────── */
   useEffect(() => {
     const fetchProblems = async () => {
       try {
         setLoading(true);
-        const response = await problemsApi.getAllProblems();
-        const apiProblems = response?.problems || [];
-
-        let finalProblems = apiProblems.filter(
-          (problem, index, self) =>
-            index === self.findIndex(p => p.id === problem.id)
+        const res = await problemsApi.getAllProblems();
+        let list = (res?.problems || []).filter(
+          (p, i, self) => i === self.findIndex(x => x.id === p.id)
         );
-
-        // Fallback to static PROBLEMS if backend database has not seeded problems
-        if (finalProblems.length === 0) {
-          finalProblems = PROBLEMS;
-        }
-
-        setProblems(finalProblems);
-        setError(null);
-      } catch (err) {
-        console.warn("API fetch failed, falling back to static problems:", err);
+        if (list.length === 0) list = PROBLEMS;
+        setProblems(list);
+      } catch {
         setProblems(PROBLEMS);
-        setError(null);
       } finally {
         setLoading(false);
       }
@@ -57,268 +56,317 @@ function ProblemsPage() {
 
     const fetchProgress = async () => {
       try {
-        // Load progress from backend (requires auth)
         const { progress } = await progressApi.getUserProgress();
-        const solvedIds = (progress || [])
-          .filter(p => p.solved)
-          .map(p => p.problemId);
-        setSolvedProblems(new Set(solvedIds));
-        // Mirror to localStorage so Navbar badge updates
-        localStorage.setItem('solvedProblems', JSON.stringify(solvedIds));
-        window.dispatchEvent(new Event('solvedProblemsUpdated'));
+        const ids = (progress || []).filter(p => p.solved).map(p => p.problemId);
+        setSolvedProblems(new Set(ids));
+        localStorage.setItem("solvedProblems", JSON.stringify(ids));
+        window.dispatchEvent(new Event("solvedProblemsUpdated"));
       } catch {
-        // Fallback to localStorage if user is not logged in
-        const saved = localStorage.getItem('solvedProblems');
-        if (saved) {
-          try { setSolvedProblems(new Set(JSON.parse(saved))); } catch { }
-        }
+        const saved = localStorage.getItem("solvedProblems");
+        if (saved) { try { setSolvedProblems(new Set(JSON.parse(saved))); } catch {} }
       }
     };
 
     fetchProblems();
     fetchProgress();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("reveal-active");
-          }
-        });
-      },
-      { threshold: 0.1 }
-    );
-
-    const elements = document.querySelectorAll(".reveal");
-    elements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* ── toggle solved ─────────────────────────────────── */
   const toggleSolved = async (problemId) => {
     const updated = new Set(solvedProblems);
     const isNowSolved = !updated.has(problemId);
-    if (isNowSolved) {
-      updated.add(problemId);
-    } else {
-      updated.delete(problemId);
-    }
+    isNowSolved ? updated.add(problemId) : updated.delete(problemId);
     setSolvedProblems(updated);
-    // Mirror to localStorage for Navbar badge
-    const idsArray = [...updated];
-    localStorage.setItem('solvedProblems', JSON.stringify(idsArray));
-    window.dispatchEvent(new Event('solvedProblemsUpdated'));
-    // Sync to backend
-    try {
-      await progressApi.saveProblemProgress(problemId, { solved: isNowSolved });
-    } catch {
-      // Non-critical: progress will still reflect locally
-    }
+    const ids = [...updated];
+    localStorage.setItem("solvedProblems", JSON.stringify(ids));
+    window.dispatchEvent(new Event("solvedProblemsUpdated"));
+    try { await progressApi.saveProblemProgress(problemId, { solved: isNowSolved }); } catch {}
   };
 
-  const difficultyStats = useMemo(
-    () =>
-      problems.reduce(
-        (acc, item) => {
-          acc[item.difficulty] = (acc[item.difficulty] || 0) + 1;
-          return acc;
-        },
-        { Easy: 0, Medium: 0, Hard: 0 }
-      ),
-    [problems]
-  );
+  /* ── computed ──────────────────────────────────────── */
+  const diffStats = useMemo(() =>
+    problems.reduce((acc, p) => { acc[p.difficulty] = (acc[p.difficulty] || 0) + 1; return acc; },
+      { Easy: 0, Medium: 0, Hard: 0 }), [problems]);
 
   const solvedStats = useMemo(() => {
-    const stats = { total: 0, Easy: 0, Medium: 0, Hard: 0 };
-    problems.forEach(problem => {
-      if (solvedProblems.has(problem.id)) {
-        stats.total++;
-        stats[problem.difficulty]++;
-      }
-    });
-    return stats;
+    const s = { total: 0, Easy: 0, Medium: 0, Hard: 0 };
+    problems.forEach(p => { if (solvedProblems.has(p.id)) { s.total++; s[p.difficulty]++; } });
+    return s;
   }, [problems, solvedProblems]);
 
-  const filteredProblems = useMemo(() => {
-    return problems.filter((problem) => {
-      const matchesDifficulty = difficulty === "All" || problem.difficulty === difficulty;
-      const matchesQuery =
-        query.trim().length === 0 ||
-        problem.title.toLowerCase().includes(query.toLowerCase()) ||
-        problem.category.toLowerCase().includes(query.toLowerCase()) ||
-        problem.tags?.some(t => t.toLowerCase().includes(query.toLowerCase()));
-      return matchesDifficulty && matchesQuery;
-    });
-  }, [difficulty, problems, query]);
+  const filtered = useMemo(() =>
+    problems.filter(p => {
+      const okDiff  = difficulty === "All" || p.difficulty === difficulty;
+      const q       = query.trim().toLowerCase();
+      const okQuery = !q ||
+        p.title.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.tags?.some(t => t.toLowerCase().includes(q));
+      return okDiff && okQuery;
+    }), [difficulty, problems, query]);
 
-  const getDifficultyColor = (diff) => {
-    switch (diff?.toLowerCase()) {
-      case 'easy':   return 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5';
-      case 'medium': return 'text-[#D4AF37] border-[#D4AF37]/25 bg-[#D4AF37]/5';
-      case 'hard':   return 'text-rose-400 border-rose-400/20 bg-rose-400/5';
-      default:       return 'text-slate-400 border-slate-400/20 bg-slate-400/5';
-    }
-  };
-
+  /* ── render ────────────────────────────────────────── */
   return (
-    <div className="min-h-screen text-slate-100 font-inter" style={{ background:"var(--bg-main)" }}>
+    <div className="min-h-screen text-slate-100" style={{ background: "var(--bg-main)" }}>
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-6 py-16 space-y-16">
-        {/* HERO SECTION */}
-        <header className="relative rounded-3xl overflow-hidden shadow-2xl" style={{ border:"1px solid rgba(212,175,55,0.12)", background:"rgba(19,19,32,0.70)" }}>
-          <div className="absolute inset-0" style={{ background:"linear-gradient(135deg, rgba(212,175,55,0.05) 0%, transparent 60%)" }} />
+      <div className="max-w-6xl mx-auto px-5 py-12 space-y-10">
 
-          <div className="relative z-10 grid lg:grid-cols-[1fr_350px] gap-12 p-10 md:p-16 items-center">
-            <div className="space-y-8">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full w-fit" style={{ background:"rgba(212,175,55,0.08)", border:"1px solid rgba(212,175,55,0.25)" }}>
-                <Sparkles className="size-3.5" style={{ color:"#D4AF37" }} />
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color:"#D4AF37" }}>Curated Problem Set</span>
+        {/* ═══════════════════════════════════════════════
+            HERO
+        ═══════════════════════════════════════════════ */}
+        <header
+          className="relative rounded-3xl overflow-hidden"
+          style={{ border: "1px solid rgba(212,175,55,0.16)", background: "rgba(13,13,22,0.85)" }}
+        >
+          {/* Gold shimmer */}
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(120deg, rgba(212,175,55,0.07) 0%, transparent 55%, rgba(212,175,55,0.03) 100%)" }} />
+          {/* Glow orb */}
+          <div style={{ position:"absolute", top:"-30%", right:"-10%", width:400, height:400, background:"rgba(212,175,55,0.08)", filter:"blur(100px)", borderRadius:"50%" }} />
+
+          <div className="relative z-10 p-10 md:p-14">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
+              {/* Left copy */}
+              <div className="space-y-6 max-w-xl">
+                <div
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest"
+                  style={{ background:"rgba(212,175,55,0.09)", border:"1px solid rgba(212,175,55,0.28)", color:G }}
+                >
+                  <Sparkles className="size-3.5" /> Curated Problem Set
+                </div>
+
+                <h1 className="text-5xl md:text-6xl font-black tracking-tight leading-tight text-white">
+                  Master the{" "}
+                  <span className="text-gradient-gold">Interview.</span>
+                </h1>
+
+                <p className="text-slate-400 text-lg leading-relaxed">
+                  A premium collection of coding challenges for professional technical preparation and career growth.
+                </p>
               </div>
-              <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight">
-                Master the <br />
-                <span className="text-slate-500 italic">Interview Process.</span>
-              </h1>
-              <p className="text-slate-400 text-lg max-w-xl leading-relaxed font-medium">
-                A high-quality collection of challenges designed for professional technical preparation and career growth.
-              </p>
+
+              {/* Right stats pills */}
+              <div className="flex flex-wrap gap-4">
+                {[
+                  { label:"Total", value: problems.length, color:"#D4AF37" },
+                  { label:"Solved", value: solvedStats.total, color:"#34d399" },
+                  { label:"Easy",   value: diffStats.Easy,   color:"#34d399" },
+                  { label:"Medium", value: diffStats.Medium, color:"#D4AF37" },
+                  { label:"Hard",   value: diffStats.Hard,   color:"#fb7185" },
+                ].map(stat => (
+                  <div
+                    key={stat.label}
+                    className="flex flex-col items-center px-5 py-4 rounded-2xl"
+                    style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${stat.color}22` }}
+                  >
+                    <span className="text-3xl font-black" style={{ color: stat.color }}>{stat.value}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-0.5">{stat.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="relative aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-2xl hidden lg:block">
-              <img src="/problems-hero.png" alt="Preparation" className="w-full h-full object-cover opacity-60 hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent" />
-            </div>
+            {/* Progress bar */}
+            {problems.length > 0 && (
+              <div className="mt-8 space-y-2">
+                <div className="flex justify-between text-xs text-slate-500 font-semibold">
+                  <span>Progress</span>
+                  <span style={{ color:G }}>{solvedStats.total} / {problems.length} solved</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background:"rgba(255,255,255,0.06)" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${problems.length > 0 ? (solvedStats.total / problems.length) * 100 : 0}%`,
+                      background: `linear-gradient(90deg, ${G}, ${GB})`,
+                      boxShadow: `0 0 12px rgba(212,175,55,0.35)`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* CONTROLS */}
-        <section className="flex flex-col md:flex-row gap-8 items-center justify-between">
-          <div className="flex flex-wrap gap-3">
-            {DIFFICULTIES.map((diff) => (
-              <button
-                key={diff}
-                onClick={() => setDifficulty(diff)}
-                className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all border ${difficulty === diff
-                  ? "bg-white text-black border-white shadow-xl scale-105"
-                  : "border-white/5 text-slate-500 hover:text-white hover:bg-white/5"
-                  }`}
-              >
-                {diff}
-              </button>
-            ))}
+        {/* ═══════════════════════════════════════════════
+            CONTROLS
+        ═══════════════════════════════════════════════ */}
+        <div className="flex flex-col md:flex-row gap-5 items-start md:items-center justify-between">
+          {/* Difficulty pills */}
+          <div className="flex flex-wrap gap-2">
+            {DIFFICULTIES.map((d) => {
+              const active = difficulty === d;
+              const ds = DIFF_STYLE[d.toLowerCase()];
+              return (
+                <button
+                  key={d}
+                  onClick={() => setDifficulty(d)}
+                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all duration-200"
+                  style={
+                    active
+                      ? { background: ds ? ds.bg : "rgba(212,175,55,0.14)", color: ds ? ds.color : G, border: `1px solid ${ds ? ds.border : "rgba(212,175,55,0.40)"}`, boxShadow: ds ? `0 0 14px ${ds.border}` : `0 0 14px rgba(212,175,55,0.20)` }
+                      : { background: "rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", color:"#64748b" }
+                  }
+                >
+                  {d}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="relative w-full md:w-[400px] group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 size-4 text-slate-600 transition-colors" style={{ color: query ? "#D4AF37" : undefined }} />
+          {/* Search */}
+          <div className="relative w-full md:w-[420px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 transition-colors" style={{ color: query ? G : "#475569" }} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search challenges or company (#EPAM, #TCS)..."
-              className="w-full pl-12 pr-6 py-3 rounded-xl text-sm transition-all font-medium outline-none"
+              placeholder="Search problems or company (#EPAM, #TCS)..."
+              className="w-full pl-11 pr-4 py-3 rounded-xl text-sm outline-none"
               style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(212,175,55,0.18)", color:"#f1f5f9" }}
             />
+            {query && (
+              <button onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-rose-400 hover:text-rose-300">
+                ✕
+              </button>
+            )}
           </div>
-        </section>
-
-        {/* COMPANY TAG FILTERS */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mr-2">Company Prep:</span>
-          {["EPAM", "TCS", "Cognizant", "LTIMindtree", "Infosys", "Wipro", "Accenture"].map((comp) => (
-            <button
-              key={comp}
-              onClick={() => setQuery(query.toLowerCase() === comp.toLowerCase() ? "" : comp)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                query.toLowerCase() === comp.toLowerCase()
-                  ? ""
-                  : ""
-              }`}
-              style={
-                query.toLowerCase() === comp.toLowerCase()
-                  ? { background:"rgba(212,175,55,0.14)", color:"#D4AF37", borderColor:"rgba(212,175,55,0.40)" }
-                  : { background:"rgba(255,255,255,0.04)", borderColor:"rgba(212,175,55,0.12)", color:"#94a3b8" }
-              }
-            >
-              #{comp}
-            </button>
-          ))}
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="text-xs text-rose-400 hover:text-rose-300 font-medium ml-2 underline underline-offset-2"
-            >
-              Reset
-            </button>
-          )}
         </div>
 
-        {/* MAIN LIST */}
-        <main className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
-          <div className="space-y-6">
+        {/* Company quick filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mr-1">Company:</span>
+          {["EPAM", "TCS", "Cognizant", "LTIMindtree", "Infosys", "Wipro", "Accenture"].map((c) => {
+            const active = query.toLowerCase() === c.toLowerCase();
+            return (
+              <button
+                key={c}
+                onClick={() => setQuery(active ? "" : c)}
+                className="px-3 py-1 rounded-lg text-xs font-bold transition-all duration-200"
+                style={
+                  active
+                    ? { background:"rgba(212,175,55,0.14)", color:G, border:"1px solid rgba(212,175,55,0.40)" }
+                    : { background:"rgba(255,255,255,0.03)", border:"1px solid rgba(212,175,55,0.10)", color:"#64748b" }
+                }
+              >
+                #{c}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ═══════════════════════════════════════════════
+            MAIN GRID
+        ═══════════════════════════════════════════════ */}
+        <main className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
+
+          {/* Problem List */}
+          <div className="space-y-3">
             {loading ? (
-              <div className="h-[400px] flex flex-col items-center justify-center gap-6 rounded-3xl border border-white/5 bg-white/[0.01]">
-                <div className="size-12 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin" />
-                <p className="text-slate-600 font-medium text-sm animate-pulse">Loading challenges...</p>
+              <div
+                className="h-80 flex flex-col items-center justify-center gap-5 rounded-3xl"
+                style={{ border:"1px solid rgba(212,175,55,0.10)", background:"rgba(255,255,255,0.01)" }}
+              >
+                <div className="spinner" />
+                <p className="text-slate-500 text-sm animate-pulse font-medium">Loading challenges...</p>
               </div>
-            ) : filteredProblems.length === 0 ? (
-              <div className="h-[400px] flex items-center justify-center rounded-3xl border border-white/5 bg-white/[0.01]">
-                <p className="text-slate-600 font-medium text-sm">No challenges found matching your criteria</p>
+            ) : filtered.length === 0 ? (
+              <div
+                className="h-64 flex flex-col items-center justify-center gap-3 rounded-3xl"
+                style={{ border:"1px solid rgba(212,175,55,0.10)", background:"rgba(255,255,255,0.01)" }}
+              >
+                <Sparkles className="size-8 text-slate-600" />
+                <p className="text-slate-500 text-sm font-medium">No challenges match your criteria</p>
+                <button onClick={() => { setQuery(""); setDifficulty("All"); }}
+                  className="text-xs font-bold underline underline-offset-2" style={{ color:G }}>
+                  Reset filters
+                </button>
               </div>
             ) : (
-              filteredProblems.map((problem) => {
-                const isSolved = solvedProblems.has(problem.id);
+              filtered.map((problem, idx) => {
+                const solved = solvedProblems.has(problem.id);
                 return (
-                  <div key={problem.id}>
+                  <div key={problem.id} className="group relative">
                     <Link
                       to={`/problem/${problem.id}`}
-                      className={`group relative rounded-2xl p-8 border transition-all duration-300 block overflow-hidden ${isSolved
-                        ? 'border-emerald-500/20 bg-emerald-500/[0.02]'
-                        : 'border-white/5 bg-slate-900/20 hover:bg-slate-900/40 hover:border-white/10'
-                        }`}
+                      className="block rounded-2xl p-6 transition-all duration-250"
+                      style={{
+                        background: solved ? "rgba(52,211,153,0.04)" : "rgba(255,255,255,0.025)",
+                        border: solved ? "1px solid rgba(52,211,153,0.22)" : "1px solid rgba(212,175,55,0.09)",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!solved) {
+                          e.currentTarget.style.background = "rgba(212,175,55,0.05)";
+                          e.currentTarget.style.borderColor = "rgba(212,175,55,0.28)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = solved ? "rgba(52,211,153,0.04)" : "rgba(255,255,255,0.025)";
+                        e.currentTarget.style.borderColor = solved ? "rgba(52,211,153,0.22)" : "rgba(212,175,55,0.09)";
+                      }}
                     >
-                      <div className="flex items-center gap-8">
-                        <div className={`size-16 rounded-2xl flex items-center justify-center border shrink-0 transition-transform group-hover:scale-105 ${isSolved
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : 'bg-white/5 border-white/10 text-slate-500 group-hover:text-white'
-                          }`}>
-                          {isSolved ? <CheckCircle2 className="size-8" /> : <Code2 className="size-8" />}
+                      <div className="flex items-center gap-5">
+                        {/* Row number / solved icon */}
+                        <div
+                          className="size-12 rounded-xl flex items-center justify-center shrink-0 font-black text-sm transition-transform duration-200 group-hover:scale-110"
+                          style={{
+                            background: solved ? "rgba(52,211,153,0.12)" : "rgba(212,175,55,0.07)",
+                            border: solved ? "1px solid rgba(52,211,153,0.25)" : "1px solid rgba(212,175,55,0.20)",
+                            color: solved ? "#34d399" : G,
+                          }}
+                        >
+                          {solved ? <CheckCircle2 className="size-6" /> : <span>{idx + 1}</span>}
                         </div>
 
-                        <div className="flex-1 space-y-3">
-                          <div className="flex flex-wrap items-center gap-4">
-                            <h2 className="text-2xl font-bold tracking-tight text-white group-hover:text-blue-400 transition-colors">{problem.title}</h2>
-                            <div className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border ${getDifficultyColor(problem.difficulty)}`}>
-                              {problem.difficulty}
-                            </div>
-                            {isSolved && (
-                              <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">Solved</span>
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h2
+                              className="text-lg font-bold text-white transition-colors duration-200 group-hover:text-[#F5C518] truncate"
+                            >
+                              {problem.title}
+                            </h2>
+                            <DiffBadge diff={problem.difficulty} />
+                            {solved && (
+                              <span
+                                className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg"
+                                style={{ color:"#34d399", background:"rgba(52,211,153,0.10)", border:"1px solid rgba(52,211,153,0.22)" }}
+                              >✓ Solved</span>
                             )}
                           </div>
-                          <p className="text-slate-300 text-sm leading-relaxed line-clamp-1 max-w-xl font-medium">
-                            {problem.description?.split('\n')[0] || "Advanced coding challenge for professional growth."}
+                          <p className="text-slate-400 text-sm line-clamp-1">
+                            {problem.description?.split("\n")[0] || "Advanced coding challenge for professional growth."}
                           </p>
-                          <div className="flex flex-wrap gap-2 pt-1">
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
                             {problem.tags?.slice(0, 3).map(tag => (
-                              <span key={tag} className="text-[10px] font-semibold text-slate-300 bg-white/10 px-2.5 py-1 rounded-lg border border-white/10 uppercase tracking-wider">#{tag}</span>
+                              <span
+                                key={tag}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md uppercase tracking-wide"
+                                style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.07)", color:"#94a3b8" }}
+                              >
+                                #{tag}
+                              </span>
                             ))}
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-4 shrink-0 ml-auto md:flex-row md:items-center">
+                        {/* Actions */}
+                        <div className="flex items-center gap-3 shrink-0">
                           <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleSolved(problem.id);
-                            }}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${isSolved
-                              ? 'border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
-                              : 'border-white/20 text-slate-200 hover:text-white hover:bg-white/10'
-                              }`}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSolved(problem.id); }}
+                            className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-200"
+                            style={
+                              solved
+                                ? { color:"#34d399", border:"1px solid rgba(52,211,153,0.25)", background:"rgba(52,211,153,0.06)" }
+                                : { color:"#64748b", border:"1px solid rgba(212,175,55,0.15)", background:"rgba(212,175,55,0.04)" }
+                            }
                           >
-                            {isSolved ? 'Reset' : 'Check'}
+                            {solved ? "Solved ✓" : "Mark"}
                           </button>
-                          <ChevronRight className="size-6 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                          <ChevronRight
+                            className="size-5 transition-all duration-200 group-hover:translate-x-1"
+                            style={{ color: G, opacity: 0.7 }}
+                          />
                         </div>
                       </div>
                     </Link>
@@ -326,38 +374,116 @@ function ProblemsPage() {
                 );
               })
             )}
+
+            {/* Count footer */}
+            {!loading && filtered.length > 0 && (
+              <p className="text-center text-xs text-slate-600 pt-2 font-medium">
+                Showing {filtered.length} of {problems.length} problems
+              </p>
+            )}
           </div>
 
-          {/* SIDEBAR */}
-          <aside className="space-y-8">
-            <div className="p-8 rounded-3xl border border-white/5 bg-slate-900/20 space-y-6 shadow-xl">
-              <div className="flex items-center gap-3 text-blue-400">
-                <Target className="size-5" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Recommended Path</span>
+          {/* ── SIDEBAR ──────────────────────────────── */}
+          <aside className="space-y-6">
+
+            {/* Focus Sequence */}
+            <div
+              className="p-7 rounded-3xl space-y-5"
+              style={{ background:"rgba(13,13,22,0.85)", border:"1px solid rgba(212,175,55,0.14)" }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="size-9 rounded-xl flex items-center justify-center"
+                  style={{ background:"rgba(212,175,55,0.10)", border:"1px solid rgba(212,175,55,0.22)" }}
+                >
+                  <Target className="size-4" style={{ color:G }} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color:G }}>Recommended Path</p>
+                  <h3 className="text-base font-bold text-white">Focus Sequence</h3>
+                </div>
               </div>
-              <h3 className="text-xl font-bold tracking-tight text-white">Focus Sequence</h3>
-              <p className="text-sm text-slate-500 font-medium leading-relaxed">
+
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Follow this curated order to build foundational skills systematically.
               </p>
-              <div className="space-y-3">
-                {problems.slice(0, 3).map(p => (
-                  <Link key={p.id} to={`/problem/${p.id}`} className="p-4 rounded-xl bg-white/5 border border-white/5 text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:border-blue-500/20 hover:text-white transition-all cursor-pointer flex items-center justify-between group">
-                    {p.title}
-                    <ArrowUpRight className="size-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+              <div className="space-y-2">
+                {problems.slice(0, 5).map((p, i) => (
+                  <Link
+                    key={p.id}
+                    to={`/problem/${p.id}`}
+                    className="group/link flex items-center justify-between p-3 rounded-xl transition-all duration-200"
+                    style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(212,175,55,0.07)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(212,175,55,0.28)"; e.currentTarget.style.background = "rgba(212,175,55,0.05)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(212,175,55,0.07)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="size-5 rounded-md flex items-center justify-center text-[9px] font-black shrink-0"
+                        style={{ background:"rgba(212,175,55,0.12)", color:G }}
+                      >{i + 1}</span>
+                      <span className="text-xs font-semibold text-slate-400 group-hover/link:text-white transition-colors truncate">{p.title}</span>
+                    </div>
+                    <ArrowUpRight className="size-3.5 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0" style={{ color:G }} />
                   </Link>
                 ))}
-                {problems.length === 0 && (
-                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest text-center py-4">No recommendations yet</p>
-                )}
               </div>
             </div>
 
-            <div className="p-8 rounded-3xl border border-white/5 bg-[#050505] space-y-6 shadow-xl">
-              <div className="flex items-center gap-3 text-slate-500">
-                <Shield className="size-5" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Architect Tip</span>
+            {/* Progress by Difficulty */}
+            <div
+              className="p-7 rounded-3xl space-y-5"
+              style={{ background:"rgba(13,13,22,0.85)", border:"1px solid rgba(212,175,55,0.14)" }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="size-9 rounded-xl flex items-center justify-center"
+                  style={{ background:"rgba(212,175,55,0.10)", border:"1px solid rgba(212,175,55,0.22)" }}
+                >
+                  <Trophy className="size-4" style={{ color:G }} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color:G }}>Your Progress</p>
+                  <h3 className="text-base font-bold text-white">By Difficulty</h3>
+                </div>
               </div>
-              <p className="text-base text-slate-400 font-medium leading-relaxed italic border-l-2 border-slate-800 pl-6">
+
+              <div className="space-y-4">
+                {[
+                  { label:"Easy",   solved: solvedStats.Easy,   total: diffStats.Easy,   color:"#34d399", track:"rgba(52,211,153,0.12)" },
+                  { label:"Medium", solved: solvedStats.Medium, total: diffStats.Medium, color:G,          track:"rgba(212,175,55,0.12)" },
+                  { label:"Hard",   solved: solvedStats.Hard,   total: diffStats.Hard,   color:"#fb7185",  track:"rgba(251,113,133,0.12)" },
+                ].map(({ label, solved, total, color, track }) => (
+                  <div key={label} className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold">
+                      <span style={{ color }}>{label}</span>
+                      <span className="text-slate-500">{solved}/{total}</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: track }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: total > 0 ? `${(solved/total)*100}%` : "0%", background: color, boxShadow:`0 0 8px ${color}60` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quote card */}
+            <div
+              className="p-7 rounded-3xl space-y-4"
+              style={{ background:"rgba(212,175,55,0.04)", border:"1px solid rgba(212,175,55,0.14)" }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Zap className="size-4" style={{ color:G }} />
+                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color:G }}>Engineer's Tip</span>
+              </div>
+              <p
+                className="text-sm text-slate-300 leading-relaxed italic pl-4"
+                style={{ borderLeft: `2px solid rgba(212,175,55,0.35)` }}
+              >
                 "Clarity in code is clarity in thought. Optimize for readability first."
               </p>
             </div>

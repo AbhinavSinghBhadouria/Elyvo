@@ -1,110 +1,151 @@
 import { Code2, Clock, Users, Trophy, Loader2, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+const G  = "#D4AF37";
+const GB = "#F5C518";
+
+const DIFF_COLOR = {
+  easy:   { color:"#34d399", bg:"rgba(52,211,153,0.08)",  border:"rgba(52,211,153,0.22)" },
+  medium: { color:G,          bg:"rgba(212,175,55,0.08)",  border:"rgba(212,175,55,0.28)" },
+  hard:   { color:"#fb7185",  bg:"rgba(251,113,133,0.08)", border:"rgba(251,113,133,0.22)" },
+};
+
 function RecentSessions({ sessions, isLoading }) {
-  const getDifficultyColor = (diff) => {
-    switch (diff?.toLowerCase()) {
-      case 'easy': return 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5';
-      case 'medium': return 'text-blue-400 border-blue-500/20 bg-blue-500/5';
-      case 'hard': return 'text-rose-400 border-rose-400/20 bg-rose-400/5';
-      default: return 'text-slate-400 border-slate-500/20 bg-white/5';
-    }
-  };
+  const ds = (diff) => DIFF_COLOR[diff?.toLowerCase()] || { color:"#94a3b8", bg:"rgba(255,255,255,0.05)", border:"rgba(255,255,255,0.10)" };
 
   return (
-    <div className="relative p-8 md:p-10 rounded-[2.5rem] premium-glass overflow-hidden h-full flex flex-col group">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="size-14 rounded-2xl bg-slate-800 flex items-center justify-center shadow-xl">
-                <Clock className="size-7 text-white" />
-            </div>
-            <div className="space-y-1">
-                <h2 className="text-2xl font-extrabold tracking-tight text-white">History</h2>
-                <p className="text-[10px] font-bold uppercase tracking-premium text-slate-500">Your historical performance</p>
-            </div>
-          </div>
-        </div>
+    <div
+      className="relative p-8 md:p-10 rounded-[2.5rem] overflow-hidden h-full flex flex-col"
+      style={{ background:"rgba(13,13,22,0.85)", border:"1px solid rgba(212,175,55,0.14)" }}
+    >
+      {/* Ambient glow */}
+      <div style={{ position:"absolute", bottom:0, left:0, width:300, height:300, background:"rgba(212,175,55,0.04)", filter:"blur(80px)", borderRadius:"50%", transform:"translate(-30%,30%)", pointerEvents:"none" }} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-          {isLoading ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-                <Loader2 className="size-10 animate-spin text-blue-500" />
-                <p className="text-xs font-bold text-slate-500 tracking-widest uppercase">Loading History...</p>
-            </div>
-          ) : sessions.length > 0 ? (
-            sessions.map((session) => (
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8 relative z-10">
+        <div
+          className="size-14 rounded-2xl flex items-center justify-center shadow-lg"
+          style={{ background:`linear-gradient(135deg, ${GB}, ${G})`, boxShadow:`0 12px 28px -8px rgba(212,175,55,0.30)` }}
+        >
+          <Clock className="size-7" style={{ color:"#09090f" }} />
+        </div>
+        <div>
+          <h2 className="text-2xl font-extrabold tracking-tight text-white">History</h2>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Your historical performance</p>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10 flex-1">
+        {isLoading ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="size-10 animate-spin" style={{ color:G }} />
+            <p className="text-xs font-bold text-slate-500 tracking-widest uppercase">Loading History...</p>
+          </div>
+        ) : sessions.length > 0 ? (
+          sessions.map((session) => {
+            const isActive = session.status === "active";
+            const d = ds(session.difficulty);
+            return (
               <div
                 key={session._id}
-                className={`group/session relative p-6 rounded-2xl border transition-all duration-500 ${
-                  session.status === "active"
-                    ? "border-emerald-500/20 bg-emerald-500/[0.08]"
-                    : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
-                }`}
+                className="relative p-5 rounded-2xl transition-all duration-300"
+                style={{
+                  background: isActive ? "rgba(52,211,153,0.05)" : "rgba(255,255,255,0.025)",
+                  border: isActive ? "1px solid rgba(52,211,153,0.22)" : "1px solid rgba(212,175,55,0.09)",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) { e.currentTarget.style.borderColor = "rgba(212,175,55,0.25)"; e.currentTarget.style.background = "rgba(212,175,55,0.04)"; }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) { e.currentTarget.style.borderColor = "rgba(212,175,55,0.09)"; e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }
+                }}
               >
-                {session.status === "active" && (
-                  <div className="absolute top-4 right-4 flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                    <div className="size-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
-                    <span className="text-[8px] font-bold uppercase tracking-widest text-emerald-400">Live Now</span>
+                {/* Live badge */}
+                {isActive && (
+                  <div
+                    className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                    style={{ background:"rgba(16,185,129,0.10)", border:"1px solid rgba(16,185,129,0.25)" }}
+                  >
+                    <div className="size-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                    <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400">Live</span>
                   </div>
                 )}
 
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
+                <div className="space-y-4">
+                  {/* Problem */}
+                  <div className="flex items-start gap-3">
                     <div
-                      className={`size-14 rounded-xl flex items-center justify-center border transition-all duration-500 shrink-0 ${
-                        session.status === "active"
-                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                          : "bg-white/5 border-white/10 text-slate-500 group-hover/session:text-white"
-                      }`}
+                      className="size-12 rounded-xl flex items-center justify-center shrink-0"
+                      style={{
+                        background: isActive ? "rgba(52,211,153,0.10)" : "rgba(212,175,55,0.07)",
+                        border: isActive ? "1px solid rgba(52,211,153,0.22)" : "1px solid rgba(212,175,55,0.18)",
+                        color: isActive ? "#34d399" : G,
+                      }}
                     >
-                      <Code2 className="size-7" />
+                      <Code2 className="size-6" />
                     </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <h3 className="font-bold text-lg tracking-tight text-white truncate">{session.problem}</h3>
-                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-widest border ${getDifficultyColor(session.difficulty)}`}>
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <h3 className="font-bold text-base tracking-tight text-white truncate">{session.problem}</h3>
+                      <span
+                        className="inline-block px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest"
+                        style={{ color:d.color, background:d.bg, border:`1px solid ${d.border}` }}
+                      >
                         {session.difficulty}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6 text-slate-400">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="size-3.5" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">
+                  {/* Meta */}
+                  <div className="flex items-center gap-4 text-slate-500">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="size-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-wide">
                         {formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="size-3.5" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest">
-                        {session.participant ? "Collaborative" : "Individual"}
+                    <div className="flex items-center gap-1.5">
+                      <Users className="size-3" />
+                      <span className="text-[10px] font-bold uppercase tracking-wide">
+                        {session.participant ? "Collab" : "Solo"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-5 border-t border-white/5">
-                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Completed Session</span>
-                    <span className="text-[9px] font-bold text-slate-400">
+                  {/* Footer */}
+                  <div
+                    className="flex items-center justify-between pt-3 border-t"
+                    style={{ borderColor:"rgba(212,175,55,0.08)" }}
+                  >
+                    <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">
+                      {isActive ? "In Progress" : "Completed"}
+                    </span>
+                    <span className="text-[9px] font-bold text-slate-500">
                       {new Date(session.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center space-y-6 opacity-40">
-                <div className="size-20 rounded-3xl bg-white/5 border border-white/5 flex items-center justify-center">
-                  <Trophy className="size-8 text-slate-400" />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xl font-bold text-white tracking-tight">No Activity Found</p>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-premium">Your journey begins with your first challenge</p>
-                </div>
+            );
+          })
+        ) : (
+          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center space-y-5">
+            <div
+              className="size-20 rounded-3xl flex items-center justify-center"
+              style={{ background:"rgba(212,175,55,0.07)", border:"1px solid rgba(212,175,55,0.18)" }}
+            >
+              <Trophy className="size-8" style={{ color:G, opacity:0.7 }} />
             </div>
-          )}
-        </div>
-        
-        <div className="absolute inset-0 rounded-[2.5rem] border border-white/5 pointer-events-none" />
+            <div className="space-y-2">
+              <p className="text-xl font-bold text-white tracking-tight">No Activity Yet</p>
+              <p className="text-xs font-medium text-slate-500 uppercase tracking-widest">Your journey begins with your first challenge</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Inner border */}
+      <div style={{ position:"absolute", inset:0, borderRadius:"inherit", border:"1px solid rgba(212,175,55,0.07)", pointerEvents:"none" }} />
     </div>
   );
 }

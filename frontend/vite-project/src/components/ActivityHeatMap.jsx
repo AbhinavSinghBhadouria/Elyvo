@@ -1,86 +1,108 @@
 import React, { useMemo } from 'react';
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, subDays, eachDayOfInterval, isSameDay } from 'date-fns';
+import { Activity } from 'lucide-react';
+
+const G  = "#D4AF37";
+const GB = "#F5C518";
 
 function ActivityHeatMap({ sessions = [] }) {
-  // Generate last 6 months of dates
   const dates = useMemo(() => {
     const today = new Date();
-    const start = subDays(today, 180); // Last 180 days (~6 months)
-    return eachDayOfInterval({ start, end: today });
+    return eachDayOfInterval({ start: subDays(today, 180), end: today });
   }, []);
 
-  const getIntensity = (date) => {
+  const getStyle = (date) => {
     const count = sessions.filter(s => isSameDay(new Date(s.createdAt), date)).length;
-    if (count === 0) return 'bg-white/5';
-    if (count === 1) return 'bg-blue-500/20';
-    if (count === 2) return 'bg-blue-500/40';
-    if (count === 3) return 'bg-blue-500/60';
-    return 'bg-blue-500';
+    if (count === 0) return { background: "rgba(255,255,255,0.04)" };
+    if (count === 1) return { background: "rgba(212,175,55,0.20)", boxShadow: "0 0 4px rgba(212,175,55,0.15)" };
+    if (count === 2) return { background: "rgba(212,175,55,0.45)", boxShadow: "0 0 6px rgba(212,175,55,0.30)" };
+    if (count === 3) return { background: "rgba(212,175,55,0.70)", boxShadow: "0 0 8px rgba(212,175,55,0.45)" };
+    return { background: G, boxShadow: `0 0 10px rgba(212,175,55,0.60)` };
   };
 
+  const totalActiveDays = new Set(sessions.map(s => format(new Date(s.createdAt), 'yyyy-MM-dd'))).size;
+
   return (
-    <div className="relative p-8 md:p-10 rounded-[2.5rem] premium-glass overflow-hidden group">
-      <div className="absolute top-0 right-0 size-64 bg-blue-600/5 blur-3xl -translate-y-1/2 translate-x-1/2" />
-      
-      <div className="relative z-10 space-y-8">
+    <div
+      className="relative p-8 md:p-10 rounded-[2.5rem] overflow-hidden"
+      style={{
+        background: "rgba(13,13,22,0.85)",
+        border: "1px solid rgba(212,175,55,0.14)",
+      }}
+    >
+      {/* Ambient gold */}
+      <div style={{ position:"absolute", top:0, right:0, width:300, height:300, background:"rgba(212,175,55,0.05)", filter:"blur(80px)", borderRadius:"50%", transform:"translate(30%,-30%)", pointerEvents:"none" }} />
+
+      <div className="relative z-10 space-y-7">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-extrabold tracking-tight text-white">Consistency Map</h2>
-            <p className="text-[10px] font-bold uppercase tracking-premium text-slate-500">Your activity over the last 6 months</p>
-          </div>
-          
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mr-2">Less</span>
-               <div className="size-3 rounded-sm bg-white/5" />
-               <div className="size-3 rounded-sm bg-blue-500/20" />
-               <div className="size-3 rounded-sm bg-blue-500/50" />
-               <div className="size-3 rounded-sm bg-blue-500" />
-               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-2">More</span>
+            <div
+              className="size-11 rounded-2xl flex items-center justify-center"
+              style={{ background:"rgba(212,175,55,0.10)", border:"1px solid rgba(212,175,55,0.22)" }}
+            >
+              <Activity className="size-5" style={{ color:G }} />
             </div>
+            <div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-white">Consistency Map</h2>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Activity over last 6 months</p>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Less</span>
+            {[
+              "rgba(255,255,255,0.04)",
+              "rgba(212,175,55,0.20)",
+              "rgba(212,175,55,0.45)",
+              "rgba(212,175,55,0.70)",
+              G,
+            ].map((bg, i) => (
+              <div key={i} className="size-3 rounded-sm" style={{ background:bg }} />
+            ))}
+            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">More</span>
           </div>
         </div>
 
-        <div className="relative group/map">
-          <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-6 mask-fade-right">
-            <div className="grid grid-flow-col grid-rows-7 gap-1.5 min-w-max">
-              {dates.map((date, i) => (
-                <div
-                  key={date.toISOString()}
-                  className={`size-3.5 rounded-sm transition-all duration-300 hover:scale-150 hover:shadow-[0_0_12px_rgba(59,130,246,0.4)] hover:z-20 cursor-pointer ${getIntensity(date)}`}
-                  title={`${format(date, 'MMM d, yyyy')}`}
-                />
-              ))}
+        {/* Grid */}
+        <div className="overflow-x-auto custom-scrollbar pb-3">
+          <div className="grid grid-flow-col grid-rows-7 gap-1.5 min-w-max">
+            {dates.map((date) => (
+              <div
+                key={date.toISOString()}
+                className="size-3.5 rounded-sm cursor-pointer transition-transform duration-150 hover:scale-150 hover:z-20"
+                style={getStyle(date)}
+                title={format(date, 'MMM d, yyyy')}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Footer stats */}
+        <div
+          className="flex items-center justify-between pt-5 border-t"
+          style={{ borderColor:"rgba(212,175,55,0.10)" }}
+        >
+          <div className="flex items-center gap-8">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Days</p>
+              <p className="text-2xl font-extrabold text-white">{totalActiveDays}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Sessions</p>
+              <p className="text-2xl font-extrabold text-white">{sessions.length}</p>
             </div>
           </div>
-          
-          {/* Legend Overlay for small screens */}
-          <div className="md:hidden absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-50">
-             <div className="size-1 bg-slate-700 rounded-full animate-bounce" />
-             <div className="size-1 bg-slate-700 rounded-full animate-bounce [animation-delay:0.2s]" />
-             <div className="size-1 bg-slate-700 rounded-full animate-bounce [animation-delay:0.4s]" />
+
+          <div
+            className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest"
+            style={{ background:"rgba(212,175,55,0.10)", border:"1px solid rgba(212,175,55,0.25)", color:G }}
+          >
+            {totalActiveDays >= 10 ? "🏆 Consistent" : totalActiveDays >= 3 ? "⚡ Building Streak" : "🌱 Just Starting"}
           </div>
         </div>
-        
-        <div className="flex items-center justify-between pt-4 border-t border-white/5">
-           <div className="flex items-center gap-6">
-              <div className="space-y-0.5">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Active Days</p>
-                <p className="text-xl font-extrabold text-white">{new Set(sessions.map(s => format(new Date(s.createdAt), 'yyyy-MM-dd'))).size}</p>
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Max Daily Streak</p>
-                <p className="text-xl font-extrabold text-white">--</p>
-              </div>
-           </div>
-           
-           <p className="text-[10px] font-bold text-blue-400 uppercase tracking-premium bg-blue-500/10 px-4 py-1.5 rounded-full border border-blue-500/20">
-              Session Master
-           </p>
-        </div>
       </div>
-      
-      <div className="absolute inset-0 rounded-[2.5rem] border border-white/5 pointer-events-none" />
     </div>
   );
 }
